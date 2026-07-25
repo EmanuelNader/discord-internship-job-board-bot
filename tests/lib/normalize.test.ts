@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { detectLevel, detectRoleFamily, detectRoleTitles } from "@/lib/normalize";
+import { detectLevel, detectRoleFamily, detectRoleTitles, dedupHash } from "@/lib/normalize";
 
 describe("detectLevel", () => {
   describe("internship detection", () => {
@@ -317,5 +317,30 @@ describe("detectRoleTitles", () => {
 
   it.each(cases)("title=%s families=%s -> %s (%s)", (title, families, expected, _label) => {
     expect(detectRoleTitles(title, families, { title, company: "Test", url: "http://x" })).toEqual(expected);
+  });
+});
+
+describe("dedupHash", () => {
+  const cases: [import("@/lib/types").SourceName, string, string, string, string][] = [
+    ["greenhouse", "12345", "Software Engineer Intern", "Google", "expected-hash-1"],
+    ["greenhouse", "12345", "software engineer intern", "Google", "expected-hash-1"],
+    ["greenhouse", "12345", "  Software Engineer Intern  ", "Google", "expected-hash-1"],
+    ["greenhouse", "", "Software Engineer Intern", "Google", "expected-hash-2"],
+    ["greenhouse", "", "software engineer intern", "Google", "expected-hash-2"],
+    ["ashby", "67890", "Software Engineer Intern", "Google", "expected-hash-3"],
+    ["greenhouse", "12345", "Software Engineer Intern", "Microsoft", "expected-hash-4"],
+  ];
+
+  it.each(cases)("source=%s extId=%s title=%s company=%s -> stable hash", (src, extId, title, company, _label) => {
+    const h1 = dedupHash(src, extId, title, company);
+    const h2 = dedupHash(src, extId, title, company);
+    expect(h1).toBe(h2);
+    expect(h1).toHaveLength(64);
+  });
+
+  it("different inputs produce different hashes", () => {
+    const h1 = dedupHash("greenhouse", "12345", "Software Engineer Intern", "Google");
+    const h2 = dedupHash("greenhouse", "12345", "Software Engineer Intern", "Microsoft");
+    expect(h1).not.toBe(h2);
   });
 });

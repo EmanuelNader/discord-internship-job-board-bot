@@ -1,4 +1,5 @@
-import type { RawPosting, Level, RoleFamily, RoleTitle } from "./types";
+import type { RawPosting, Level, RoleFamily, RoleTitle, SourceName } from "./types";
+import { createHash } from "node:crypto";
 
 const INCLUDE_INTERNSHIP = /\b(intern|internship|summer\s+202\d|fall\s+202\d|spring\s+202\d)\b/i;
 const INCLUDE_COOP = /\b(co[- ]?op|cooperative\s+education|placement\s+year)\b/i;
@@ -92,7 +93,7 @@ export function detectRoleFamily(title: string, _raw?: RawPosting): RoleFamily[]
   return families;
 }
 
-const TITLE_KEYWORDS: Record<RoleFamily, Record<RoleTitle, RegExp>> = {
+const TITLE_KEYWORDS: Record<RoleFamily, Partial<Record<RoleTitle, RegExp>>> = {
   swe: {
     "swe-frontend": /\b(frontend|front[- ]?end)\b/i,
     "swe-backend": /\b(backend|back[- ]?end)\b/i,
@@ -160,4 +161,21 @@ export function detectRoleTitles(
     }
   }
   return titles;
+}
+
+function normalizeForHash(s: string): string {
+  return s.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+export function dedupHash(
+  sourceName: SourceName,
+  externalId: string,
+  title: string,
+  company: string
+): string {
+  const normTitle = normalizeForHash(title);
+  const normCompany = normalizeForHash(company);
+  const parts = externalId ? [sourceName, externalId, normTitle, normCompany] : [sourceName, normTitle, normCompany];
+  const input = parts.join("|");
+  return createHash("sha256").update(input).digest("hex");
 }
