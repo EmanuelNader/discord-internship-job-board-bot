@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { detectLevel } from "@/lib/normalize";
+import { detectLevel, detectRoleFamily } from "@/lib/normalize";
 
 describe("detectLevel", () => {
   describe("internship detection", () => {
@@ -205,5 +205,61 @@ describe("detectLevel", () => {
       const longTitle = "Software Engineering Internship Summer 2025 Remote United States Full Time";
       expect(detectLevel(longTitle)).toBe("internship");
     });
+  });
+});
+
+describe("detectRoleFamily", () => {
+  const cases: [string, import("@/lib/types").RoleFamily[], string][] = [
+    // SWE
+    ["Frontend Engineer Intern", ["swe"], "frontend keyword"],
+    ["Backend Software Engineer Intern", ["swe"], "backend keyword"],
+    ["Full Stack Intern", ["swe"], "full stack"],
+    ["Mobile Engineer Co-op", ["swe"], "mobile"],
+    ["DevOps Intern", ["swe"], "devops"],
+    ["Site Reliability Engineer Intern", ["swe"], "sre"],
+    ["Embedded Systems Intern", ["swe"], "embedded"],
+    ["Software Engineer Intern", ["swe"], "generic swe"],
+    // PM/Program
+    ["Product Manager Intern", ["pm-program"], "pm"],
+    ["Technical Program Manager Intern", ["pm-program"], "tpm"],
+    ["Program Manager Co-op", ["pm-program"], "program manager"],
+    // Hardware
+    ["Silicon Design Intern", ["hardware"], "silicon"],
+    ["PCB Layout Co-op", ["hardware"], "pcb"],
+    ["FPGA Engineer Intern", ["hardware"], "fpga"],
+    ["ASIC Verification Intern", ["hardware"], "asic"],
+    // Data
+    ["Data Scientist Intern", ["data"], "data scientist"],
+    ["Data Engineer Intern", ["data"], "data engineer"],
+    ["Analytics Intern", ["data"], "analytics"],
+    // ML/AI
+    ["Machine Learning Engineer Intern", ["ml"], "ml engineer"],
+    ["ML Researcher Co-op", ["ml"], "ml researcher"],
+    ["AI Engineer Intern", ["ml"], "ai engineer"],
+    // Engineering (non-SWE)
+    ["Structural Engineering Intern", ["engineering"], "structural"],
+    ["Civil Engineer Co-op", ["engineering"], "civil"],
+    ["Electrical Engineering Intern", ["engineering"], "electrical"],
+    ["Mechanical Engineer Intern", ["engineering"], "mechanical"],
+    ["Chemical Engineering Intern", ["engineering"], "chemical"],
+    ["Aerospace Engineer Intern", ["engineering"], "aerospace"],
+    // Design
+    ["UX Designer Intern", ["design"], "ux"],
+    ["UI Designer Co-op", ["design"], "ui"],
+    ["Product Designer Intern", ["design"], "product design"],
+    ["Interaction Designer Intern", ["design"], "interaction"],
+    // Growth
+    ["Growth Marketing Intern", ["growth"], "growth marketing"],
+    ["Lifecycle Marketing Intern", ["growth"], "lifecycle"],
+    ["User Acquisition Intern", ["growth"], "acquisition"],
+    // Multi-family (title spans families)
+    ["Software Engineer Intern - Hardware Team", ["swe", "hardware"], "multi-family"],
+    // Unknown
+    ["Random Title", [], "unknown"],
+    ["", [], "empty"],
+  ];
+
+  it.each(cases)("title=%s -> %s (%s)", (title, expected, _label) => {
+    expect(detectRoleFamily(title, { title, company: "Test", url: "http://x" })).toEqual(expected);
   });
 });
