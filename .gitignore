@@ -1,39 +1,8 @@
-# Dependencies
 node_modules/
-
-# Build output
 dist/
-
-# Environment files
+dev.db
+dev.db-journal
 .env
-.env.local
-.env.*.local
-
-# Database
-prisma/migrations/
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Logs
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Test coverage
+.DS_Store
 coverage/
-
-# TypeScript cache
-*.tsbuildinfo
-
-# Vitest
-vitest.workspace.ts
-vitest.config.ts.timestamp-*.pid
