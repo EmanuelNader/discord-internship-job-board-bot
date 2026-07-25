@@ -1,0 +1,33 @@
+{
+  "name": "internship-job-board-bot",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio",
+    "postinstall": "prisma generate"
+  },
+  "dependencies": {
+    "discord.js": "^14.15.3",
+    "@prisma/client": "^5.18.0",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.5.0",
+    "typescript": "^5.5.4",
+    "tsx": "^4.17.0",
+    "vitest": "^2.0.5",
+    "prisma": "^5.18.0",
+    "@types/nock": "^11.1.0",
+    "nock": "^13.5.4"
+  },
+  "engines": { "node": ">=20.0.0" }
+}
