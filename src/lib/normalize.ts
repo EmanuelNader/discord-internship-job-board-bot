@@ -1,4 +1,4 @@
-import type { RawPosting, Level, RoleFamily } from "./types";
+import type { RawPosting, Level, RoleFamily, RoleTitle } from "./types";
 
 const INCLUDE_INTERNSHIP = /\b(intern|internship|summer\s+202\d|fall\s+202\d|spring\s+202\d)\b/i;
 const INCLUDE_COOP = /\b(co[- ]?op|cooperative\s+education|placement\s+year)\b/i;
@@ -90,4 +90,74 @@ export function detectRoleFamily(title: string, _raw?: RawPosting): RoleFamily[]
     }
   }
   return families;
+}
+
+const TITLE_KEYWORDS: Record<RoleFamily, Record<RoleTitle, RegExp>> = {
+  swe: {
+    "swe-frontend": /\b(frontend|front[- ]?end)\b/i,
+    "swe-backend": /\b(backend|back[- ]?end)\b/i,
+    "swe-fullstack": /\b(full[- ]?stack|fullstack)\b/i,
+    "swe-mobile": /\b(mobile|ios|android)\b/i,
+    "swe-devops": /\b(devops|dev[- ]?ops|sre|site\s+reliability)\b/i,
+    "swe-embedded": /\b(embedded|firmware)\b/i,
+  },
+  "pm-program": {
+    "pm-product": /\b(product\s+manager|pm\b)\b/i,
+    "pm-tpm": /\b(technical\s+program\s+manager|tpm\b)\b/i,
+    "pm-program": /\b(?<!technical\s+)program\s+manager\b/i,
+  },
+  hardware: {
+    "hw-silicon": /\b(silicon|vlsi|chip\s+design)\b/i,
+    "hw-pcb": /\b(pcb|printed\s+circuit\s+board)\b/i,
+    "hw-fpga": /\b(fpga)\b/i,
+    "hw-asic": /\b(asic|verification|physical\s+design)\b/i,
+  },
+  data: {
+    "data-scientist": /\b(data\s+scientist)\b/i,
+    "data-engineer": /\b(data\s+engineer)\b/i,
+    "data-analytics": /\b(analytics|data\s+analyst)\b/i,
+  },
+  ml: {
+    "ml-engineer": /\b(machine\s+learning|ml\s+engineer)\b/i,
+    "ml-researcher": /\b(ml\s+researcher|machine\s+learning\s+research)\b/i,
+    "ml-ai-eng": /\b(ai\s+engineer|artificial\s+intelligence\s+engineer)\b/i,
+  },
+  engineering: {
+    "eng-structural": /\b(structural\s+engineer(?:ing)?)\b/i,
+    "eng-civil": /\b(civil\s+engineer(?:ing)?)\b/i,
+    "eng-electrical": /\b(electrical\s+engineer(?:ing)?)\b/i,
+    "eng-mechanical": /\b(mechanical\s+engineer(?:ing)?)\b/i,
+    "eng-chemical": /\b(chemical\s+engineer(?:ing)?)\b/i,
+    "eng-aerospace": /\b(aerospace\s+engineer(?:ing)?)\b/i,
+  },
+  design: {
+    "design-ux": /\b(ux\s+designer|user\s+experience\s+designer)\b/i,
+    "design-ui": /\b(ui\s+designer|user\s+interface\s+designer)\b/i,
+    "design-product": /\b(product\s+designer)\b/i,
+    "design-interaction": /\b(interaction\s+designer)\b/i,
+  },
+  growth: {
+    "growth-general": /\b(growth\s+marketing|growth\s+engineer)\b/i,
+    "growth-lifecycle": /\b(lifecycle\s+marketing)\b/i,
+    "growth-acquisition": /\b(user\s+acquisition|acquisition\s+marketing)\b/i,
+  },
+};
+
+export function detectRoleTitles(
+  title: string,
+  roleFamilies: RoleFamily[],
+  _raw?: RawPosting
+): RoleTitle[] {
+  const norm = title.trim().replace(/\s+/g, " ").toLowerCase();
+  const titles: RoleTitle[] = [];
+  for (const family of roleFamilies) {
+    const patterns = TITLE_KEYWORDS[family];
+    if (!patterns) continue;
+    for (const [roleTitle, re] of Object.entries(patterns)) {
+      if (re.test(norm)) {
+        titles.push(roleTitle as RoleTitle);
+      }
+    }
+  }
+  return titles;
 }

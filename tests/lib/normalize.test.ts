@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { detectLevel, detectRoleFamily } from "@/lib/normalize";
+import { detectLevel, detectRoleFamily, detectRoleTitles } from "@/lib/normalize";
 
 describe("detectLevel", () => {
   describe("internship detection", () => {
@@ -261,5 +261,61 @@ describe("detectRoleFamily", () => {
 
   it.each(cases)("title=%s -> %s (%s)", (title, expected, _label) => {
     expect(detectRoleFamily(title, { title, company: "Test", url: "http://x" })).toEqual(expected);
+  });
+});
+
+describe("detectRoleTitles", () => {
+  const cases: [string, import("@/lib/types").RoleFamily[], import("@/lib/types").RoleTitle[], string][] = [
+    // SWE titles
+    ["Frontend Engineer Intern", ["swe"], ["swe-frontend"], "frontend"],
+    ["Backend Software Engineer Intern", ["swe"], ["swe-backend"], "backend"],
+    ["Full Stack Intern", ["swe"], ["swe-fullstack"], "fullstack"],
+    ["Mobile Engineer Co-op", ["swe"], ["swe-mobile"], "mobile"],
+    ["DevOps Intern", ["swe"], ["swe-devops"], "devops"],
+    ["Embedded Systems Intern", ["swe"], ["swe-embedded"], "embedded"],
+    ["Software Engineer Intern", ["swe"], [], "generic swe -> no specific title"],
+    // Multiple titles in one
+    ["Frontend & Backend Engineer Intern", ["swe"], ["swe-frontend", "swe-backend"], "multi-title"],
+    // PM/Program
+    ["Product Manager Intern", ["pm-program"], ["pm-product"], "pm product"],
+    ["Technical Program Manager Intern", ["pm-program"], ["pm-tpm"], "tpm"],
+    ["Program Manager Co-op", ["pm-program"], ["pm-program"], "program"],
+    // Hardware
+    ["Silicon Design Intern", ["hardware"], ["hw-silicon"], "silicon"],
+    ["PCB Layout Co-op", ["hardware"], ["hw-pcb"], "pcb"],
+    ["FPGA Engineer Intern", ["hardware"], ["hw-fpga"], "fpga"],
+    ["ASIC Verification Intern", ["hardware"], ["hw-asic"], "asic"],
+    // Data
+    ["Data Scientist Intern", ["data"], ["data-scientist"], "data scientist"],
+    ["Data Engineer Intern", ["data"], ["data-engineer"], "data engineer"],
+    ["Analytics Intern", ["data"], ["data-analytics"], "analytics"],
+    // ML
+    ["Machine Learning Engineer Intern", ["ml"], ["ml-engineer"], "ml engineer"],
+    ["ML Researcher Co-op", ["ml"], ["ml-researcher"], "ml researcher"],
+    ["AI Engineer Intern", ["ml"], ["ml-ai-eng"], "ai engineer"],
+    // Engineering
+    ["Structural Engineering Intern", ["engineering"], ["eng-structural"], "structural"],
+    ["Civil Engineer Co-op", ["engineering"], ["eng-civil"], "civil"],
+    ["Electrical Engineering Intern", ["engineering"], ["eng-electrical"], "electrical"],
+    ["Mechanical Engineer Intern", ["engineering"], ["eng-mechanical"], "mechanical"],
+    ["Chemical Engineering Intern", ["engineering"], ["eng-chemical"], "chemical"],
+    ["Aerospace Engineer Intern", ["engineering"], ["eng-aerospace"], "aerospace"],
+    // Design
+    ["UX Designer Intern", ["design"], ["design-ux"], "ux"],
+    ["UI Designer Co-op", ["design"], ["design-ui"], "ui"],
+    ["Product Designer Intern", ["design"], ["design-product"], "product design"],
+    ["Interaction Designer Intern", ["design"], ["design-interaction"], "interaction"],
+    // Growth
+    ["Growth Marketing Intern", ["growth"], ["growth-general"], "growth general"],
+    ["Lifecycle Marketing Intern", ["growth"], ["growth-lifecycle"], "lifecycle"],
+    ["User Acquisition Intern", ["growth"], ["growth-acquisition"], "acquisition"],
+    // Title not in family -> empty
+    ["Frontend Engineer Intern", ["data"], [], "wrong family"],
+    // Empty
+    ["", ["swe"], [], "empty"],
+  ];
+
+  it.each(cases)("title=%s families=%s -> %s (%s)", (title, families, expected, _label) => {
+    expect(detectRoleTitles(title, families, { title, company: "Test", url: "http://x" })).toEqual(expected);
   });
 });
