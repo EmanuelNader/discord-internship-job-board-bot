@@ -36,3 +36,9 @@ export interface Posting {
   firstSeenAt: Date;
   raw?: Record<string, unknown>;
 }
+
+export interface SourceAdapter {
+  name: SourceName;
+  pollIntervalSec: number;
+  fetchNewPostings(): Promise<RawPosting[]>;
+}
