@@ -2,8 +2,14 @@ import { REST, Routes } from "discord.js";
 import { Client } from "discord.js";
 import { pingCommand } from "./ping";
 import { roleCommand, unroleCommand } from "./role";
+import { statusCommand } from "./status";
+import { linkchannelCommand } from "./linkchannel";
+import { setupCommand } from "./setup";
 
-const commands = [pingCommand, roleCommand, unroleCommand].map((c) => c.toJSON());
+const commands = [
+  pingCommand, roleCommand, unroleCommand,
+  statusCommand, linkchannelCommand, setupCommand,
+].map((c) => c.toJSON());
 
 export async function deployCommands(client: Client): Promise<void> {
   const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN!);
