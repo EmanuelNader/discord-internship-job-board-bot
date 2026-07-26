@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Posting {
+  id           Int      @id @default(autoincrement())
+  dedupHash    String   @unique
+  externalId   String
+  sourceName   String
+  kind         String   @default("job")
+  level        String
+  title        String
+  company      String
+  location     String?
+  roleFamily   String
+  roleTitles   String
+  url          String
+  firstSeenAt  DateTime @default(now())
+  postedAt     DateTime?
+  raw          String?
+  channelIds   String?
+
+  @@index([sourceName])
+  @@index([firstSeenAt])
+  @@index([kind, roleFamily])
+}
+
+model Source {
+  name               String   @id
+  lastRunAt          DateTime?
+  lastError          String?
+  ingestedCount      Int      @default(0)
+  droppedNonIntern   Int      @default(0)
+  droppedUnclassified Int     @default(0)
+  enabled            Boolean  @default(true)
+  pollIntervalSec    Int      @default(300)
+}
+
+model ChannelMap {
+  id         Int    @id @default(autoincrement())
+  kind       String
+  roleFamily String
+  channelId  String
+
+  @@unique([kind, roleFamily])
+}
