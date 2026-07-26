@@ -1,58 +1,34 @@
-# Next Session Handoff
+# Session Handoff — Plan 2 Complete
 
-## State: Plan 1 Complete — Awaiting Merge to `main`
+## State
+- Branch: `plan/02-adapters` (commit `a43bb52`)
+- **149 tests pass**, `tsc --noEmit` clean, 0 errors
+- All 6 adapters + SourcesManager + backfill implemented
 
-### Branch: `plan/01-scaffold` (HEAD: 9cf549f)
-
-Plan 1 (scaffold + contract + normalize + DB) is fully implemented with 9 tasks completed and reviewed. Ready for final merge to `main`.
-
-### Completed Deliverables
-
+## Deliverables
 | File | Status |
 |------|--------|
-| `package.json`, `tsconfig.json`, `vitest.config.ts`, `.env.example`, `.gitignore`, `src/index.ts` | Scaffold |
-| `src/lib/types.ts` | Full `Posting` contract types |
-| `src/lib/normalize.ts` | `detectLevel`, `detectRoleFamily`, `detectRoleTitles`, `dedupHash` |
-| `tests/lib/normalize.test.ts` | 119 table-driven tests, all passing |
-| `prisma/schema.prisma` | Posting, Source, ChannelMap models (SQLite) |
-| `src/db/client.ts` | PrismaClient singleton |
-| `src/config/adapters.config.ts` | 6 adapters with starter companies |
-| `src/config/roles.config.ts` | 8 role families, 30 per-title roles |
-| `src/config/index.ts` | Re-exports |
+| `src/adapters/base.ts` | fetchJson/fetchHtml, AdapterError, normalize fns |
+| `src/adapters/index.ts` | Registry: createAdapter/getAllAdapters |
+| `src/adapters/greenhouse.ts` | Greenhouse jobboard JSON API, pagination |
+| `src/adapters/ashby.ts` | Ashby jobs API |
+| `src/adapters/lever.ts` | Lever `api.lever.co/v0/postings` JSON |
+| `src/adapters/workday.ts` | Workday POST API, pagination |
+| `src/adapters/simplify.ts` | Cheerio HTML scraper; companies=[] for Phase 1 |
+| `src/adapters/github.ts` | GitHub Issues REST API, issue body parsing |
+| `src/scheduler/index.ts` | SourcesManager: intervals, dedup upsert, health tracking |
+| `src/scheduler/backfill.ts` | Insert-only backfill with postedAt set |
 
-### Verification
-- `npm test` — 119/119 passing
-- `npx tsc --noEmit` — zero errors
-- `npm run db:push` — SQLite dev.db created with 3 tables
+## Next Branch: `plan/03-poster`
+Tasks from the design spec:
+1. **Discord poster** — embed builder per role family, channel routing via ChannelMap, rate limiting
+2. **Slash commands** — `postings list`, `postings search`
+3. **Channel provisioning** — auto-create channels per role family on startup
+4. **Deployment** — PM2 config, env setup, first run with backfill
 
-### What's Next (in order)
-
-#### 1. Merge Plan 1 to main
-```bash
-git checkout main
-git merge plan/01-scaffold
-git push origin main
-```
-
-#### 2. Plan 2 — Adapters + Scheduler + Backfill
-Branch: `plan/02-adapters`
-File: `docs/superpowers/plans/2026-07-24-02-adapters-scheduler-backfill.md`
-Creates:
-- `src/adapters/` — 6 source adapters (Greenhouse, Ashby, Lever, Workday, Simplify, GitHub)
-- `src/scheduler/` — SourcesManager + backfill logic
-- `tests/adapters/` — fixture-based adapter tests
-
-#### 3. Plan 3 — Poster + Commands + Provisioning + Deploy
-Branch: `plan/03-poster`
-File: `docs/superpowers/plans/2026-07-24-03-poster-commands-provisioning-deploy.md`
-Creates:
-- `src/poster/` — rate-limited poster + embed builder
-- `src/commands/` — 6 slash commands (/ping, /role, /unrole, /status, /linkchannel, /setup)
-- `src/provisioning/` — auto-create channels/roles on boot
-- `ecosystem.config.cjs` — PM2 deploy config
-
-### Key Branch Convention
-- One branch per plan
-- Each plan branch created from `main` after prior plan is merged
-- Subagent-driven execution per task
-- Task reviews after each task, whole-branch review before merge
+## Plan 2 Observations
+- All adapters use `fetchJson` from `base.ts` (which wraps `node:https`/`node:http` directly, not global `fetch`) for nock compatibility
+- Simplify adapter has `companies: []` in config — accepts optional `companiesOverride` for testing
+- Workday adapter uses POST with JSON body — `fetchJson` signature extended to support method/body/headers
+- SourcesManager requires `onNewPosting` callback (integrated by poster) and `onError` callback
+- Backfill sets `postedAt: new Date()` so new-post detection skips backfilled records
