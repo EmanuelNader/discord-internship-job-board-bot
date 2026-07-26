@@ -29,6 +29,13 @@ describe("Poster", () => {
 
     const mockClient = {
       channels: { fetch: mockClientChannelsFetch },
+      guilds: {
+        cache: {
+          first: () => ({
+            roles: { cache: [] },
+          }),
+        },
+      },
     } as any;
 
     poster = new Poster(mockClient);

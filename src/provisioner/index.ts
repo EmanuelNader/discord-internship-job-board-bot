@@ -1,7 +1,6 @@
-import { Client, Guild } from "discord.js";
+import { Client } from "discord.js";
 import { roleFamilies } from "@/config/roles.config";
 import { prisma } from "@/db/client";
-import type { RoleFamily } from "@/lib/types";
 
 export async function ensureGuildSetup(client: Client): Promise<void> {
   const guild = client.guilds.cache.first();

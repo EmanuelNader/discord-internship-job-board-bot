@@ -8,6 +8,11 @@ export const statusCommand = new SlashCommandBuilder()
 export async function handleStatus(interaction: ChatInputCommandInteraction): Promise<void> {
   const sources = await prisma.source.findMany();
 
+  if (sources.length === 0) {
+    await interaction.reply({ content: "No sources have run yet. Sources will appear here after the first scrape cycle.", ephemeral: true });
+    return;
+  }
+
   const embed = new EmbedBuilder()
     .setTitle("Source Health")
     .setColor(0x3498db);

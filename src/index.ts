@@ -44,4 +44,8 @@ client.on(Events.InteractionCreate, (interaction) => {
   handleInteraction(interaction);
 });
 
+if (!process.env.DISCORD_TOKEN) {
+  console.error("DISCORD_TOKEN not set");
+  process.exit(1);
+}
 client.login(process.env.DISCORD_TOKEN);

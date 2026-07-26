@@ -16,5 +16,9 @@ const handlers: Record<string, (i: ChatInputCommandInteraction) => Promise<void>
 
 export async function handleInteraction(interaction: ChatInputCommandInteraction): Promise<void> {
   const handler = handlers[interaction.commandName];
-  if (handler) await handler(interaction);
+  if (handler) {
+    await handler(interaction);
+  } else {
+    await interaction.reply({ content: "Unknown command.", ephemeral: true });
+  }
 }

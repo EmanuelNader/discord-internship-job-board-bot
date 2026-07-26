@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
+import { ChatInputCommandInteraction, SlashCommandBuilder, PermissionFlagsBits, ChannelType } from "discord.js";
 import { prisma } from "@/db/client";
 import { roleFamilies } from "@/config/roles.config";
 
@@ -21,6 +21,11 @@ export const linkchannelCommand = new SlashCommandBuilder()
 export async function handleLinkChannel(interaction: ChatInputCommandInteraction): Promise<void> {
   const family = interaction.options.getString("family", true);
   const channel = interaction.options.getChannel("channel", true);
+
+  if (channel.type !== ChannelType.GuildText && channel.type !== ChannelType.GuildAnnouncement) {
+    await interaction.reply({ content: "Channel must be a text channel.", ephemeral: true });
+    return;
+  }
 
   await prisma.channelMap.upsert({
     where: { kind_roleFamily: { kind: "job", roleFamily: family } },
