@@ -12,13 +12,14 @@ export class AdapterError extends Error {
 interface JsonOptions {
   method?: string;
   body?: string;
+  headers?: Record<string, string>;
 }
 
 function requestJson(url: string, opts?: JsonOptions): Promise<string> {
   return new Promise((resolve, reject) => {
     const isHttps = url.startsWith("https:");
     const fn = isHttps ? httpsRequest : httpRequest;
-    const req = fn(url, { method: opts?.method ?? "GET", headers: { "User-Agent": "InternshipJobBoardBot/1.0", ...(opts?.body ? { "Content-Type": "application/json" } : {}) } }, (res) => {
+    const req = fn(url, { method: opts?.method ?? "GET", headers: { "User-Agent": "InternshipJobBoardBot/1.0", "Content-Type": "application/json", ...(opts?.headers ?? {}) } }, (res) => {
       let body = "";
       if (res.statusCode && (res.statusCode < 200 || res.statusCode >= 300)) {
         reject(new Error(`HTTP ${res.statusCode}: ${res.statusMessage}`));
