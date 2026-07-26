@@ -1,6 +1,6 @@
 import type { RawPosting, SourceName } from "@/lib/types";
-import { get } from "node:https";
-import { get as getHttp } from "node:http";
+import { request as httpsRequest } from "node:https";
+import { request as httpRequest } from "node:http";
 
 export class AdapterError extends Error {
   constructor(public readonly source: SourceName, message: string, public readonly cause?: Error) {
@@ -9,10 +9,16 @@ export class AdapterError extends Error {
   }
 }
 
-function requestJson(url: string): Promise<string> {
+interface JsonOptions {
+  method?: string;
+  body?: string;
+}
+
+function requestJson(url: string, opts?: JsonOptions): Promise<string> {
   return new Promise((resolve, reject) => {
-    const fn = url.startsWith("https:") ? get : getHttp;
-    const req = fn(url, { headers: { "User-Agent": "InternshipJobBoardBot/1.0" } }, (res) => {
+    const isHttps = url.startsWith("https:");
+    const fn = isHttps ? httpsRequest : httpRequest;
+    const req = fn(url, { method: opts?.method ?? "GET", headers: { "User-Agent": "InternshipJobBoardBot/1.0", ...(opts?.body ? { "Content-Type": "application/json" } : {}) } }, (res) => {
       let body = "";
       if (res.statusCode && (res.statusCode < 200 || res.statusCode >= 300)) {
         reject(new Error(`HTTP ${res.statusCode}: ${res.statusMessage}`));
@@ -24,11 +30,13 @@ function requestJson(url: string): Promise<string> {
       res.on("end", () => resolve(body));
     });
     req.on("error", reject);
+    if (opts?.body) req.write(opts.body);
+    req.end();
   });
 }
 
-export async function fetchJson<T>(url: string, _init?: RequestInit): Promise<T> {
-  const body = await requestJson(url);
+export async function fetchJson<T>(url: string, opts?: JsonOptions): Promise<T> {
+  const body = await requestJson(url, opts);
   return JSON.parse(body) as T;
 }
 
