@@ -26,7 +26,7 @@ client.once(Events.ClientReady, async () => {
   const poster = new Poster(client, prisma);
   const manager = new SourcesManager(
     getAllAdapters(),
-    (posting) => poster.send(posting),
+    (posting, hash) => poster.send(posting, hash),
     (source, error) => console.error(`[${source}] ${error.message}`)
   );
 

@@ -117,10 +117,12 @@ describe("SourcesManager", () => {
       expect.objectContaining({
         title: "Software Engineer Intern",
         company: "Acme",
-        roleFamilies: ["swe"],
+        sourceName: "test",
+        roleFamily: ["swe"],
         roleTitles: ["swe-frontend"],
         level: "internship",
-      })
+      }),
+      "hash123"
     );
   });
 

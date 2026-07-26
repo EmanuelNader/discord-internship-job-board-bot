@@ -8,7 +8,7 @@ export class SourcesManager {
 
   constructor(
     private readonly adapters: SourceAdapter[],
-    private readonly onNewPosting: (posting: RawPosting & { roleFamilies: string[]; roleTitles: string[]; level: string }) => Promise<void>,
+    private readonly onNewPosting: (posting: Omit<RawPosting, "location"> & { location: string | null; roleFamily: string[]; roleTitles: string[]; level: string; sourceName: string }, dedupHash: string) => Promise<void>,
     private readonly onError: (source: string, error: Error) => void
   ) {}
 
@@ -83,11 +83,15 @@ export class SourcesManager {
         const existing = await prisma.posting.findUnique({ where: { dedupHash: hash } });
         if (existing && !existing.postedAt) {
           await this.onNewPosting({
-            ...raw,
-            roleFamilies,
+            title: raw.title,
+            company: raw.company,
+            location: raw.location ?? null,
+            url: raw.url,
+            sourceName: adapter.name,
+            roleFamily: roleFamilies,
             roleTitles,
             level,
-          });
+          }, hash);
           ingested++;
         }
       }
