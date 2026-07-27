@@ -14,30 +14,26 @@ describe("Lever Adapter", () => {
           id: "lever_123",
           text: "Frontend Engineer Intern",
           categories: { location: "New York, NY", team: "Engineering" },
-          applyUrl: "https://jobs.lever.co/shopify/lever_123",
-          hostedUrl: "https://jobs.lever.co/shopify/lever_123",
+          applyUrl: "https://jobs.lever.co/palantir/lever_123",
+          hostedUrl: "https://jobs.lever.co/palantir/lever_123",
         },
       ],
     };
 
     nock("https://api.lever.co")
-      .get("/v0/postings/shopify")
+      .get("/v0/postings/palantir")
       .query({ mode: "json" })
       .reply(200, fixture);
     nock("https://api.lever.co")
-      .get("/v0/postings/discord")
+      .get("/v0/postings/spotify")
       .query({ mode: "json" })
       .reply(200, { postings: [] });
     nock("https://api.lever.co")
-      .get("/v0/postings/figma")
+      .get("/v0/postings/zoox")
       .query({ mode: "json" })
       .reply(200, { postings: [] });
     nock("https://api.lever.co")
-      .get("/v0/postings/linear")
-      .query({ mode: "json" })
-      .reply(200, { postings: [] });
-    nock("https://api.lever.co")
-      .get("/v0/postings/vercel")
+      .get("/v0/postings/belvedere-trading")
       .query({ mode: "json" })
       .reply(200, { postings: [] });
 
@@ -45,15 +41,15 @@ describe("Lever Adapter", () => {
     expect(postings).toHaveLength(1);
     expect(postings[0]).toMatchObject({
       title: "Frontend Engineer Intern",
-      company: "Shopify",
+      company: "Palantir",
       externalId: "lever_123",
-      url: "https://jobs.lever.co/shopify/lever_123",
+      url: "https://jobs.lever.co/palantir/lever_123",
     });
   });
 
   it("throws AdapterError on network failure", async () => {
     nock("https://api.lever.co")
-      .get("/v0/postings/shopify")
+      .get("/v0/postings/palantir")
       .query({ mode: "json" })
       .replyWithError("ECONNREFUSED");
 

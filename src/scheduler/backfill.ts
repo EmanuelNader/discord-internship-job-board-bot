@@ -1,6 +1,6 @@
 import { prisma } from "@/db/client";
 import { getAllAdapters } from "@/adapters";
-import { detectLevel, detectRoleFamily, detectRoleTitles, dedupHash } from "@/lib/normalize";
+import { detectLevel, detectRoleFamily, detectRoleTitles, dedupHash, contentHash, isUsLocation } from "@/lib/normalize";
 
 export interface BackfillOptions {
   limitPerSource: number;
@@ -21,16 +21,26 @@ export async function runBackfill(options: BackfillOptions): Promise<void> {
         const level = detectLevel(raw.title, raw);
         if (!level) continue;
 
+        if (!isUsLocation(raw.location)) continue;
+
         const roleFamilies = detectRoleFamily(raw.title, raw);
         if (roleFamilies.length === 0) continue;
 
         const roleTitles = detectRoleTitles(raw.title, roleFamilies, raw);
         const hash = dedupHash(adapter.name, raw.externalId ?? "", raw.title, raw.company);
+        const cHash = contentHash(raw.title, raw.company);
+
+        // Check if this job content already exists from another source
+        const existingByContent = await prisma.posting.findUnique({ where: { contentHash: cHash } });
+        if (existingByContent) continue;
+
+        const publishedAt = raw.publishedAt ? new Date(raw.publishedAt) : null;
 
         await prisma.posting.upsert({
           where: { dedupHash: hash },
           create: {
             dedupHash: hash,
+            contentHash: cHash,
             externalId: raw.externalId ?? "",
             sourceName: adapter.name,
             kind: "job",
@@ -41,6 +51,7 @@ export async function runBackfill(options: BackfillOptions): Promise<void> {
             roleFamily: JSON.stringify(roleFamilies),
             roleTitles: JSON.stringify(roleTitles),
             url: raw.url,
+            publishedAt,
             raw: raw.raw ? JSON.stringify(raw.raw) : null,
             postedAt: new Date(),
           },

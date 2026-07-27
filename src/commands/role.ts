@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
+import { AutocompleteInteraction, ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
 import { roleFamilies } from "@/config/roles.config";
 
 const allRoleTitles = roleFamilies.flatMap((f) =>
@@ -13,7 +13,7 @@ export const roleCommand = new SlashCommandBuilder()
       .setName("role")
       .setDescription("Role to self-assign")
       .setRequired(true)
-      .addChoices(...allRoleTitles)
+      .setAutocomplete(true)
   );
 
 export const unroleCommand = new SlashCommandBuilder()
@@ -24,8 +24,17 @@ export const unroleCommand = new SlashCommandBuilder()
       .setName("role")
       .setDescription("Role to remove")
       .setRequired(true)
-      .addChoices(...allRoleTitles)
+      .setAutocomplete(true)
   );
+
+export async function handleRoleAutocomplete(interaction: AutocompleteInteraction): Promise<void> {
+  const focused = interaction.options.getFocused(true);
+  const query = focused.value.toLowerCase();
+  const choices = allRoleTitles
+    .filter((c) => c.name.toLowerCase().includes(query) || c.value.toLowerCase().includes(query))
+    .slice(0, 25);
+  await interaction.respond(choices);
+}
 
 export async function handleRoleAdd(interaction: ChatInputCommandInteraction): Promise<void> {
   const roleTitle = interaction.options.getString("role", true);

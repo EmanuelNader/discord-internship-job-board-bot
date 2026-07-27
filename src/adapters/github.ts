@@ -7,6 +7,7 @@ interface GithubIssue {
   title: string;
   html_url: string;
   body: string | null;
+  created_at: string;
 }
 
 function parseIssueBody(body: string): { company?: string; role?: string; location?: string; link?: string } {
@@ -56,6 +57,7 @@ export function createGithubAdapter(): SourceAdapter {
               location: parsed.location ?? null,
               url: parsed.link ?? issue.html_url,
               externalId: `${repo}-${issue.number}`,
+              publishedAt: issue.created_at,
               raw: { issueNumber: issue.number, repo, title: issue.title },
             });
           }

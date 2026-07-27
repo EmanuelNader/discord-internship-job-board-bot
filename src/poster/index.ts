@@ -12,6 +12,7 @@ interface PostingToSend {
   sourceName: string;
   roleFamily: string[];
   roleTitles: string[];
+  postedAt?: Date;
 }
 
 export class Poster {

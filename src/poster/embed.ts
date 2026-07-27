@@ -6,6 +6,15 @@ const LEVEL_COLORS: Record<string, number> = {
   fellowship: 0x9b59b6,
 };
 
+function formatPostedDate(date?: Date): string {
+  if (!date) return "recently";
+  // Use UTC to avoid timezone issues
+  const month = date.toLocaleString("en-US", { month: "short", timeZone: "UTC" });
+  const day = date.getUTCDate();
+  const year = date.getUTCFullYear();
+  return `${month} ${day}, ${year}`;
+}
+
 interface EmbedInput {
   title: string;
   company: string;
@@ -15,6 +24,7 @@ interface EmbedInput {
   sourceName: string;
   roleFamily: string[];
   roleTitles: string[];
+  postedAt?: Date;
 }
 
 export function buildPostingEmbed(input: EmbedInput): EmbedBuilder {
@@ -32,6 +42,8 @@ export function buildPostingEmbed(input: EmbedInput): EmbedBuilder {
   if (input.roleTitles.length > 0) {
     embed.addFields({ name: "Roles", value: input.roleTitles.map((r) => `\`${r}\``).join(", ") });
   }
+
+  embed.addFields({ name: "Posted", value: formatPostedDate(input.postedAt), inline: false });
 
   return embed;
 }

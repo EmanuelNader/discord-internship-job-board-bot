@@ -10,7 +10,7 @@ export type RoleTitle =
   | "eng-structural" | "eng-civil" | "eng-electrical" | "eng-mechanical" | "eng-chemical" | "eng-aerospace"
   | "design-ux" | "design-ui" | "design-product" | "design-interaction"
   | "growth-general" | "growth-lifecycle" | "growth-acquisition";
-export type SourceName = "greenhouse" | "ashby" | "lever" | "workday" | "simplify" | "github";
+export type SourceName = "greenhouse" | "ashby" | "lever" | "workday" | "simplify" | "github" | "custom";
 
 export interface RawPosting {
   title: string;
@@ -18,6 +18,7 @@ export interface RawPosting {
   location?: string | null;
   url: string;
   externalId?: string;
+  publishedAt?: string;
   raw?: Record<string, unknown>;
 }
 

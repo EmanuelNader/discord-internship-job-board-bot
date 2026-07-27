@@ -4,12 +4,15 @@ const mockDetectLevel = vi.hoisted(() => vi.fn());
 const mockDetectRoleFamily = vi.hoisted(() => vi.fn());
 const mockDetectRoleTitles = vi.hoisted(() => vi.fn());
 const mockDedupHash = vi.hoisted(() => vi.fn());
+const mockContentHash = vi.hoisted(() => vi.fn(() => "content-hash-123"));
+const mockIsUsLocation = vi.hoisted(() => vi.fn(() => true));
 const mockGetAllAdapters = vi.hoisted(() => vi.fn());
 
 vi.mock("@/db/client", () => ({
   prisma: {
     posting: {
       upsert: vi.fn(),
+      findUnique: vi.fn(),
     },
     source: {
       upsert: vi.fn(),
@@ -22,6 +25,8 @@ vi.mock("@/lib/normalize", () => ({
   detectRoleFamily: mockDetectRoleFamily,
   detectRoleTitles: mockDetectRoleTitles,
   dedupHash: mockDedupHash,
+  contentHash: mockContentHash,
+  isUsLocation: mockIsUsLocation,
 }));
 
 vi.mock("@/adapters", () => ({
@@ -56,6 +61,7 @@ describe("Backfill", () => {
     mockDetectRoleFamily.mockReturnValue(["swe"]);
     mockDetectRoleTitles.mockReturnValue(["swe-frontend"]);
     mockDedupHash.mockReturnValue("hash123");
+    (prisma.posting.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(null); // no existing contentHash
     (prisma.posting.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 1 });
 
     await runBackfill({ enabled: true, limitPerSource: 100 });
@@ -65,6 +71,7 @@ describe("Backfill", () => {
         where: { dedupHash: "hash123" },
         create: expect.objectContaining({
           postedAt: expect.any(Date),
+          publishedAt: null,
         }),
       })
     );
@@ -86,6 +93,7 @@ describe("Backfill", () => {
     mockDetectRoleFamily.mockReturnValue(["swe"]);
     mockDetectRoleTitles.mockReturnValue([]);
     mockDedupHash.mockReturnValue("hash");
+    (prisma.posting.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(null);
     (prisma.posting.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 1 });
 
     await runBackfill({ enabled: true, limitPerSource: 2 });

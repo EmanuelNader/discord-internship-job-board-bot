@@ -167,6 +167,24 @@ function normalizeForHash(s: string): string {
   return s.trim().replace(/\s+/g, " ").toLowerCase();
 }
 
+const US_STATES = /\b(AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY|DC)\b/;
+const US_INDICATORS = /\b(united\s+states|usa|u\.?s\.?a?)\b/i;
+const NON_US_COUNTRIES = /\b(canada|united\s+kingdom|uk|england|australia|india|germany|france|singapore|japan|china|brazil|mexico|netherlands|ireland|switzerland|sweden|spain|italy|finland|denmark|norway|belgium|austria|new\s+zealand|south\s+korea|hong\s+kong|taiwan|poland|israel|dubai|uae|emea|apac|europe|switzerland)\b/i;
+const NON_US_CITIES = /\b(london|sydney|toronto|vancouver|berlin|paris|tokyo|shanghai|beijing|dublin|amsterdam|zurich|stockholm|bangalore|mumbai|melbourne|hong\s+kong|singapore|mexico\s+city|sao\s+paulo)\b/i;
+
+export function isUsLocation(location: string | null | undefined): boolean {
+  if (location == null) return true;
+
+  const loc = location.trim();
+  if (!loc) return true;
+
+  if (US_STATES.test(loc) || US_INDICATORS.test(loc)) return true;
+  if (NON_US_COUNTRIES.test(loc)) return false;
+  if (NON_US_CITIES.test(loc)) return false;
+
+  return true;
+}
+
 export function dedupHash(
   sourceName: SourceName,
   externalId: string,
@@ -177,5 +195,12 @@ export function dedupHash(
   const normCompany = normalizeForHash(company);
   const parts = externalId ? [sourceName, externalId, normTitle, normCompany] : [sourceName, normTitle, normCompany];
   const input = parts.join("|");
+  return createHash("sha256").update(input).digest("hex");
+}
+
+export function contentHash(title: string, company: string, url?: string): string {
+  const normTitle = normalizeForHash(title);
+  const normCompany = normalizeForHash(company);
+  const input = url ? `${normTitle}|${normCompany}|${url}` : `${normTitle}|${normCompany}`;
   return createHash("sha256").update(input).digest("hex");
 }

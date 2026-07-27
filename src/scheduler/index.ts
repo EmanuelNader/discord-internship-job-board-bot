@@ -1,6 +1,6 @@
 import type { SourceAdapter, RawPosting } from "@/lib/types";
 import { prisma } from "@/db/client";
-import { detectLevel, detectRoleFamily, detectRoleTitles, dedupHash } from "@/lib/normalize";
+import { detectLevel, detectRoleFamily, detectRoleTitles, dedupHash, contentHash, isUsLocation } from "@/lib/normalize";
 
 export class SourcesManager {
   private intervals: Map<string, NodeJS.Timeout> = new Map();
@@ -8,7 +8,7 @@ export class SourcesManager {
 
   constructor(
     private readonly adapters: SourceAdapter[],
-    private readonly onNewPosting: (posting: Omit<RawPosting, "location"> & { location: string | null; roleFamily: string[]; roleTitles: string[]; level: string; sourceName: string }, dedupHash: string) => Promise<void>,
+    private readonly onNewPosting: (posting: Omit<RawPosting, "location"> & { location: string | null; roleFamily: string[]; roleTitles: string[]; level: string; sourceName: string; postedAt?: Date }, dedupHash: string) => Promise<void>,
     private readonly onError: (source: string, error: Error) => void
   ) {}
 
@@ -40,6 +40,7 @@ export class SourcesManager {
     let ingested = 0;
     let droppedNonIntern = 0;
     let droppedUnclassified = 0;
+    let droppedNonUS = 0;
     let lastError: string | null = null;
 
     try {
@@ -52,6 +53,11 @@ export class SourcesManager {
           continue;
         }
 
+        if (!isUsLocation(raw.location)) {
+          droppedNonUS++;
+          continue;
+        }
+
         const roleFamilies = detectRoleFamily(raw.title, raw);
         if (roleFamilies.length === 0) {
           droppedUnclassified++;
@@ -60,11 +66,23 @@ export class SourcesManager {
 
         const roleTitles = detectRoleTitles(raw.title, roleFamilies, raw);
         const hash = dedupHash(adapter.name, raw.externalId ?? "", raw.title, raw.company);
+        const contentHashValue = contentHash(raw.title, raw.company);
+
+        // Check if this job content was already seen from another source
+        const existingByContent = await prisma.posting.findUnique({ where: { contentHash: contentHashValue } });
+        if (existingByContent) {
+          // Job already exists from another source - skip creating duplicate
+          droppedUnclassified++;
+          continue;
+        }
+
+        const publishedAt = raw.publishedAt ? new Date(raw.publishedAt) : null;
 
         await prisma.posting.upsert({
           where: { dedupHash: hash },
           create: {
             dedupHash: hash,
+            contentHash: contentHashValue,
             externalId: raw.externalId ?? "",
             sourceName: adapter.name,
             kind: "job",
@@ -75,6 +93,7 @@ export class SourcesManager {
             roleFamily: JSON.stringify(roleFamilies),
             roleTitles: JSON.stringify(roleTitles),
             url: raw.url,
+            publishedAt,
             raw: raw.raw ? JSON.stringify(raw.raw) : null,
           },
           update: {},
@@ -91,6 +110,7 @@ export class SourcesManager {
             roleFamily: roleFamilies,
             roleTitles,
             level,
+            postedAt: existing.publishedAt ?? existing.firstSeenAt,
           }, hash);
           ingested++;
         }
@@ -107,6 +127,7 @@ export class SourcesManager {
           ingestedCount: ingested,
           droppedNonIntern,
           droppedUnclassified,
+          droppedNonUS,
           lastError,
           pollIntervalSec: adapter.pollIntervalSec,
         },
@@ -115,6 +136,7 @@ export class SourcesManager {
           ingestedCount: { increment: ingested },
           droppedNonIntern: { increment: droppedNonIntern },
           droppedUnclassified: { increment: droppedUnclassified },
+          droppedNonUS: { increment: droppedNonUS },
           lastError,
         },
       });

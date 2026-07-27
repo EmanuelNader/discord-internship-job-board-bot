@@ -4,6 +4,8 @@ const mockDetectLevel = vi.hoisted(() => vi.fn());
 const mockDetectRoleFamily = vi.hoisted(() => vi.fn());
 const mockDetectRoleTitles = vi.hoisted(() => vi.fn());
 const mockDedupHash = vi.hoisted(() => vi.fn());
+const mockContentHash = vi.hoisted(() => vi.fn(() => "content-hash-123"));
+const mockIsUsLocation = vi.hoisted(() => vi.fn(() => true));
 
 vi.mock("@/db/client", () => ({
   prisma: {
@@ -22,6 +24,8 @@ vi.mock("@/lib/normalize", () => ({
   detectRoleFamily: mockDetectRoleFamily,
   detectRoleTitles: mockDetectRoleTitles,
   dedupHash: mockDedupHash,
+  contentHash: mockContentHash,
+  isUsLocation: mockIsUsLocation,
 }));
 
 import { SourcesManager } from "@/scheduler/index";
@@ -94,12 +98,11 @@ describe("SourcesManager", () => {
     mockDetectRoleFamily.mockReturnValue(["swe"]);
     mockDetectRoleTitles.mockReturnValue(["swe-frontend"]);
     mockDedupHash.mockReturnValue("hash123");
+    mockContentHash.mockReturnValue("content-hash-123");
+    (prisma.posting.findUnique as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce(null) // contentHash check - no existing
+      .mockResolvedValueOnce({ id: 1, dedupHash: "hash123", postedAt: null, publishedAt: new Date("2026-06-15T10:00:00Z"), firstSeenAt: new Date() }); // after upsert
     (prisma.posting.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 1 });
-    (prisma.posting.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
-      id: 1,
-      dedupHash: "hash123",
-      postedAt: null,
-    });
 
     const manager = new SourcesManager([mockAdapter], onNewPosting, onError);
     await manager.runOnce("test");
@@ -121,6 +124,7 @@ describe("SourcesManager", () => {
         roleFamily: ["swe"],
         roleTitles: ["swe-frontend"],
         level: "internship",
+        postedAt: new Date("2026-06-15T10:00:00Z"),
       }),
       "hash123"
     );

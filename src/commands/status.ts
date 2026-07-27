@@ -24,6 +24,7 @@ export async function handleStatus(interaction: ChatInputCommandInteraction): Pr
         `Last run: ${s.lastRunAt?.toISOString() ?? "never"}`,
         `Ingested: ${s.ingestedCount}`,
         `Dropped (non-intern): ${s.droppedNonIntern}`,
+        `Dropped (non-US): ${s.droppedNonUS}`,
         `Dropped (unclassified): ${s.droppedUnclassified}`,
         `Error: ${s.lastError ?? "none"}`,
       ].join("\n"),

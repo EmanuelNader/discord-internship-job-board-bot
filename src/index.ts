@@ -4,7 +4,7 @@ import { getAllAdapters } from "@/adapters/index";
 import { prisma } from "@/db/client";
 import { runBackfill } from "@/scheduler/backfill";
 import { deployCommands } from "@/commands/deploy";
-import { handleInteraction } from "@/commands/index";
+import { handleInteraction, handleAutocomplete } from "@/commands/index";
 import { ensureGuildSetup } from "@/provisioner/index";
 import { Poster } from "@/poster/index";
 
@@ -27,7 +27,7 @@ client.once(Events.ClientReady, async () => {
   const manager = new SourcesManager(
     getAllAdapters(),
     (posting, hash) => poster.send(posting, hash),
-    (source, error) => console.error(`[${source}] ${error.message}`)
+    (source, error) => console.error(error.message)
   );
 
   if (process.env.BACKFILL === "true") {
@@ -39,9 +39,12 @@ client.once(Events.ClientReady, async () => {
   console.log("SourcesManager started");
 });
 
-client.on(Events.InteractionCreate, (interaction) => {
-  if (!interaction.isChatInputCommand()) return;
-  handleInteraction(interaction);
+client.on(Events.InteractionCreate, async (interaction) => {
+  if (interaction.isChatInputCommand()) {
+    await handleInteraction(interaction);
+  } else if (interaction.isAutocomplete()) {
+    await handleAutocomplete(interaction);
+  }
 });
 
 if (!process.env.DISCORD_TOKEN) {

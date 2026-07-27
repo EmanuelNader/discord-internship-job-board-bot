@@ -7,12 +7,13 @@ interface GreenhouseJob {
   title: string;
   location?: { name: string } | null;
   absolute_url: string;
-  metadata?: Array<{ name: string; value: string }>;
+  company_name: string;
+  first_published?: string;
 }
 
 interface GreenhouseResponse {
   jobs: GreenhouseJob[];
-  next?: string;
+  meta: { total: number };
 }
 
 export function createGreenhouseAdapter(): SourceAdapter {
@@ -26,27 +27,23 @@ export function createGreenhouseAdapter(): SourceAdapter {
       const postings: RawPosting[] = [];
 
       for (const company of config.companies) {
-        let url = `https://boards.greenhouse.io/${company}/embed/jobboard?content=Job&method=json`;
-        let hasMore = true;
-
-        while (hasMore) {
-          try {
-            const data = await fetchJson<GreenhouseResponse>(url);
-            for (const job of data.jobs) {
-              postings.push({
-                title: job.title,
-                company: company.charAt(0).toUpperCase() + company.slice(1),
-                location: job.location?.name ?? null,
-                url: job.absolute_url,
-                externalId: job.id,
-                raw: job as unknown as Record<string, unknown>,
-              });
-            }
-            hasMore = !!data.next;
-            if (hasMore) url = `https://boards.greenhouse.io/${company}/embed/jobboard?content=Job&method=json&${data.next}`;
-          } catch (err) {
-            throw new AdapterError("greenhouse", `Failed fetching ${company}`, err as Error);
+        try {
+          const data = await fetchJson<GreenhouseResponse>(
+            `https://boards-api.greenhouse.io/v1/boards/${company}/jobs?content=Job`
+          );
+          for (const job of data.jobs) {
+            postings.push({
+              title: job.title,
+              company: job.company_name,
+              location: job.location?.name ?? null,
+              url: job.absolute_url,
+              externalId: job.id.toString(),
+              publishedAt: job.first_published,
+              raw: job as unknown as Record<string, unknown>,
+            });
           }
+        } catch (err) {
+          throw new AdapterError("greenhouse", `Failed fetching ${company}`, err as Error);
         }
       }
       return postings;

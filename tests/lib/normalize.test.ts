@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { detectLevel, detectRoleFamily, detectRoleTitles, dedupHash } from "@/lib/normalize";
+import { detectLevel, detectRoleFamily, detectRoleTitles, dedupHash, isUsLocation } from "@/lib/normalize";
 
 describe("detectLevel", () => {
   describe("internship detection", () => {
@@ -342,5 +342,57 @@ describe("dedupHash", () => {
     const h1 = dedupHash("greenhouse", "12345", "Software Engineer Intern", "Google");
     const h2 = dedupHash("greenhouse", "12345", "Software Engineer Intern", "Microsoft");
     expect(h1).not.toBe(h2);
+  });
+});
+
+describe("isUsLocation", () => {
+  it("returns true for null location", () => {
+    expect(isUsLocation(null)).toBe(true);
+  });
+
+  it("returns true for undefined location", () => {
+    expect(isUsLocation(undefined)).toBe(true);
+  });
+
+  it("returns true for empty location", () => {
+    expect(isUsLocation("")).toBe(true);
+  });
+
+  it("returns true for US state abbreviation", () => {
+    expect(isUsLocation("Mountain View, CA")).toBe(true);
+    expect(isUsLocation("New York, NY")).toBe(true);
+    expect(isUsLocation("Austin, TX")).toBe(true);
+  });
+
+  it("returns true for 'United States'", () => {
+    expect(isUsLocation("United States")).toBe(true);
+    expect(isUsLocation("Remote, US")).toBe(true);
+    expect(isUsLocation("USA")).toBe(true);
+  });
+
+  it("returns true for Remote (keep ambiguous)", () => {
+    expect(isUsLocation("Remote")).toBe(true);
+  });
+
+  it("returns false for non-US countries", () => {
+    expect(isUsLocation("London, UK")).toBe(false);
+    expect(isUsLocation("Toronto, ON, Canada")).toBe(false);
+    expect(isUsLocation("Sydney, Australia")).toBe(false);
+    expect(isUsLocation("Berlin, Germany")).toBe(false);
+    expect(isUsLocation("Bangalore, India")).toBe(false);
+    expect(isUsLocation("Singapore")).toBe(false);
+    expect(isUsLocation("Tokyo, Japan")).toBe(false);
+    expect(isUsLocation("Home based - EMEA")).toBe(false);
+  });
+
+  it("returns false for non-US cities without country", () => {
+    expect(isUsLocation("London")).toBe(false);
+    expect(isUsLocation("Toronto")).toBe(false);
+    expect(isUsLocation("Paris")).toBe(false);
+  });
+
+  it("returns true for US cities without state", () => {
+    expect(isUsLocation("San Francisco")).toBe(true);
+    expect(isUsLocation("New York City")).toBe(true);
   });
 });

@@ -25,26 +25,19 @@ describe("Workday Adapter", () => {
       pageSize: 1,
     };
 
-    nock("https://nvidia.wd1.myworkdayjobs.com")
-      .post("/wd1/nvidia/careers")
+    nock("https://adobe.wd1.myworkdayjobs.com")
+      .post("/wd1/adobe/careers")
       .reply(200, page1);
 
-    nock("https://nvidia.wd1.myworkdayjobs.com")
-      .post("/wd1/nvidia/careers")
+    nock("https://adobe.wd1.myworkdayjobs.com")
+      .post("/wd1/adobe/careers")
       .reply(200, page2);
 
-    nock("https://intel.wd1.myworkdayjobs.com")
-      .post("/wd1/intel/careers")
-      .reply(200, { jobPostings: [], total: 0, page: 1, pageSize: 20 });
-    nock("https://amd.wd1.myworkdayjobs.com")
-      .post("/wd1/amd/careers")
-      .reply(200, { jobPostings: [], total: 0, page: 1, pageSize: 20 });
-    nock("https://qualcomm.wd1.myworkdayjobs.com")
-      .post("/wd1/qualcomm/careers")
-      .reply(200, { jobPostings: [], total: 0, page: 1, pageSize: 20 });
-    nock("https://salesforce.wd1.myworkdayjobs.com")
-      .post("/wd1/salesforce/careers")
-      .reply(200, { jobPostings: [], total: 0, page: 1, pageSize: 20 });
+    for (const co of ["nvidia", "expedia", "turo", "blue-origin", "salesforce", "general-motors", "disney", "slack", "capital-one", "paypal"]) {
+      nock(`https://${co}.wd1.myworkdayjobs.com`)
+        .post(`/wd1/${co}/careers`)
+        .reply(200, { jobPostings: [], total: 0, page: 1, pageSize: 20 });
+    }
 
     const postings = await adapter.fetchNewPostings();
     expect(postings).toHaveLength(2);
@@ -53,21 +46,15 @@ describe("Workday Adapter", () => {
   });
 
   it("throws AdapterError on network failure", async () => {
-    nock("https://nvidia.wd1.myworkdayjobs.com")
-      .post("/wd1/nvidia/careers")
+    nock("https://adobe.wd1.myworkdayjobs.com")
+      .post("/wd1/adobe/careers")
       .replyWithError("ECONNREFUSED");
-    nock("https://intel.wd1.myworkdayjobs.com")
-      .post("/wd1/intel/careers")
-      .reply(200, { jobPostings: [], total: 0, page: 1, pageSize: 20 });
-    nock("https://amd.wd1.myworkdayjobs.com")
-      .post("/wd1/amd/careers")
-      .reply(200, { jobPostings: [], total: 0, page: 1, pageSize: 20 });
-    nock("https://qualcomm.wd1.myworkdayjobs.com")
-      .post("/wd1/qualcomm/careers")
-      .reply(200, { jobPostings: [], total: 0, page: 1, pageSize: 20 });
-    nock("https://salesforce.wd1.myworkdayjobs.com")
-      .post("/wd1/salesforce/careers")
-      .reply(200, { jobPostings: [], total: 0, page: 1, pageSize: 20 });
+
+    for (const co of ["nvidia", "expedia", "turo", "blue-origin", "salesforce", "general-motors", "disney", "slack", "capital-one", "paypal"]) {
+      nock(`https://${co}.wd1.myworkdayjobs.com`)
+        .post(`/wd1/${co}/careers`)
+        .reply(200, { jobPostings: [], total: 0, page: 1, pageSize: 20 });
+    }
 
     await expect(adapter.fetchNewPostings()).rejects.toThrow(/workday/i);
   });
