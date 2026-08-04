@@ -8,7 +8,7 @@ Spec: docs/superpowers/specs/2026-07-23-discord-internship-job-board-bot-design.
 - `plan/01-scaffold` — Plan 1: scaffold + contract + normalize + DB (**complete / merged**)
 - `plan/02-adapters` — Plan 2: adapters + scheduler + backfill (**complete / merged**)
 - `plan/03-poster` — Plan 3: poster + commands + provisioning (**complete / merged**)
-- `plan/04-deploy` — Plan 4: deploy, ops hardening & smoke (**IN PROGRESS**)
+- `plan/04-deploy` — Plan 4: deploy, ops hardening & smoke (**code + docs complete; manual smoke pending**)
 
 ## Convention
 - One branch per plan. Each plan's tasks are executed subagent-driven on its branch.
@@ -40,6 +40,7 @@ Spec: docs/superpowers/specs/2026-07-23-discord-internship-job-board-bot-design.
 - [x] All plan tasks complete and merged (deploy ops → Plan 4)
 
 ### Plan 4 — deploy, ops hardening & smoke (branch plan/04-deploy)
+- Status: **code + docs complete on branch; manual Discord smoke + merge pending**
 - Plan: `docs/superpowers/plans/2026-08-04-04-deploy-ops-smoke.md`
 - Base of plan ≈ `6b57a42` on `main`
 - [x] Task 1: Env bootstrap + validation — `586d661`
@@ -50,4 +51,4 @@ Spec: docs/superpowers/specs/2026-07-23-discord-internship-job-board-bot-design.
 - [x] Task 6: Graceful shutdown — `65a15e3`
 - [x] Task 7: PM2 ecosystem config — `ecosystem.config.cjs` (present on branch)
 - [x] Task 8: Deploy runbook + SDD progress — `docs/DEPLOY.md` + this file
-- [ ] Task 9: Full verification + smoke checklist + handoff / merge
+- [x] Task 9: Full verification + handoff — automated verify + handoff docs done; **manual Discord smoke still operator-owned** (merge to `main` after smoke/review)
