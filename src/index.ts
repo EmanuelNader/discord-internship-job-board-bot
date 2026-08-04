@@ -1,3 +1,5 @@
+import "dotenv/config";
+import { validateEnv } from "@/config/env";
 import { Client, GatewayIntentBits, Events } from "discord.js";
 import { SourcesManager } from "@/scheduler/index";
 import { getAllAdapters } from "@/adapters/index";
@@ -7,6 +9,8 @@ import { deployCommands } from "@/commands/deploy";
 import { handleInteraction, handleAutocomplete } from "@/commands/index";
 import { ensureGuildSetup } from "@/provisioner/index";
 import { Poster } from "@/poster/index";
+
+const env = validateEnv();
 
 const client = new Client({
   intents: [
@@ -30,9 +34,9 @@ client.once(Events.ClientReady, async () => {
     (source, error) => console.error(error.message)
   );
 
-  if (process.env.BACKFILL === "true") {
+  if (env.BACKFILL) {
     console.log("Running backfill...");
-    await runBackfill({ enabled: true, limitPerSource: Number(process.env.BACKFILL_LIMIT) || 50 });
+    await runBackfill({ enabled: true, limitPerSource: env.BACKFILL_LIMIT });
   }
 
   manager.start();
@@ -47,8 +51,4 @@ client.on(Events.InteractionCreate, async (interaction) => {
   }
 });
 
-if (!process.env.DISCORD_TOKEN) {
-  console.error("DISCORD_TOKEN not set");
-  process.exit(1);
-}
-client.login(process.env.DISCORD_TOKEN);
+client.login(env.DISCORD_TOKEN);
