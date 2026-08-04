@@ -28,17 +28,21 @@ client.once(Events.ClientReady, async () => {
   await deployCommands(client);
 
   const poster = new Poster(client, prisma);
+
+  if (env.BACKFILL) {
+    console.log(`Running backfill (limit ${env.BACKFILL_LIMIT} per source)...`);
+    await runBackfill(
+      { enabled: true, limitPerSource: env.BACKFILL_LIMIT },
+      (posting, hash) => poster.send(posting, hash)
+    );
+    console.log("Backfill complete");
+  }
+
   const manager = new SourcesManager(
     getAllAdapters(),
     (posting, hash) => poster.send(posting, hash),
-    (source, error) => console.error(error.message)
+    (source, error) => console.error(`[${source}] ${error.message}`)
   );
-
-  if (env.BACKFILL) {
-    console.log("Running backfill...");
-    await runBackfill({ enabled: true, limitPerSource: env.BACKFILL_LIMIT });
-  }
-
   manager.start();
   console.log("SourcesManager started");
 });

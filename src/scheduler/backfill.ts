@@ -7,7 +7,25 @@ export interface BackfillOptions {
   enabled: boolean;
 }
 
-export async function runBackfill(options: BackfillOptions): Promise<void> {
+export type BackfillOnNewPosting = (
+  posting: {
+    title: string;
+    company: string;
+    location: string | null;
+    url: string;
+    sourceName: string;
+    roleFamily: string[];
+    roleTitles: string[];
+    level: string;
+    postedAt?: Date;
+  },
+  dedupHash: string
+) => Promise<void>;
+
+export async function runBackfill(
+  options: BackfillOptions,
+  onNewPosting: BackfillOnNewPosting
+): Promise<void> {
   if (!options.enabled) return;
 
   const adapters = getAllAdapters();
@@ -53,10 +71,25 @@ export async function runBackfill(options: BackfillOptions): Promise<void> {
             url: raw.url,
             publishedAt,
             raw: raw.raw ? JSON.stringify(raw.raw) : null,
-            postedAt: new Date(),
+            postedAt: null,
           },
           update: {},
         });
+
+        const existing = await prisma.posting.findUnique({ where: { dedupHash: hash } });
+        if (existing && !existing.postedAt) {
+          await onNewPosting({
+            title: raw.title,
+            company: raw.company,
+            location: raw.location ?? null,
+            url: raw.url,
+            sourceName: adapter.name,
+            roleFamily: roleFamilies,
+            roleTitles,
+            level,
+            postedAt: existing.publishedAt ?? existing.firstSeenAt,
+          }, hash);
+        }
       }
     } catch (err) {
       console.error(`Backfill failed for ${adapter.name}:`, err);
