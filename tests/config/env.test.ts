@@ -25,15 +25,24 @@ describe("validateEnv", () => {
     expect(env.BACKFILL_LIMIT).toBe(5);
   });
 
-  it("defaults BACKFILL to false and BACKFILL_LIMIT to 50", () => {
+  it("defaults BACKFILL to false, BACKFILL_LIMIT to 50, and GITHUB_MAX_AGE_DAYS to 14", () => {
     process.env.DISCORD_TOKEN = "tok";
     process.env.DATABASE_URL = "file:./dev.db";
     delete process.env.BACKFILL;
     delete process.env.BACKFILL_LIMIT;
+    delete process.env.GITHUB_MAX_AGE_DAYS;
 
     const env = validateEnv();
     expect(env.BACKFILL).toBe(false);
     expect(env.BACKFILL_LIMIT).toBe(50);
+    expect(env.GITHUB_MAX_AGE_DAYS).toBe(14);
+  });
+
+  it("throws when GITHUB_MAX_AGE_DAYS is not a positive number", () => {
+    process.env.DISCORD_TOKEN = "tok";
+    process.env.DATABASE_URL = "file:./dev.db";
+    process.env.GITHUB_MAX_AGE_DAYS = "0";
+    expect(() => validateEnv()).toThrow(/GITHUB_MAX_AGE_DAYS/);
   });
 
   it("throws when DISCORD_TOKEN missing", () => {

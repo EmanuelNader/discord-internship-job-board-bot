@@ -37,9 +37,10 @@ model Source {
   lastRunAt          DateTime?
   lastError          String?
   ingestedCount      Int      @default(0)
-  droppedNonIntern   Int      @default(0)
-  droppedUnclassified Int     @default(0)
-  droppedNonUS       Int      @default(0)
+  droppedNonIntern    Int      @default(0)
+  droppedUnclassified Int      @default(0)
+  droppedNonUS        Int      @default(0)
+  droppedDuplicate    Int      @default(0)
   enabled            Boolean  @default(true)
   pollIntervalSec    Int      @default(300)
 }

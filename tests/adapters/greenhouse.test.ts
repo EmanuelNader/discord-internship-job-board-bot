@@ -1,31 +1,27 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import nock from "nock";
 import { createGreenhouseAdapter } from "@/adapters/greenhouse";
+import { adapterConfigs } from "@/config/adapters.config";
 
-const OTHER_COMPANIES = [
-  "andurilindustries", "airtable", "airbnb", "fireworksai", "figma", "twitch", "neuralink",
-  "robinhood", "xai", "anthropic", "reddit", "cloudflare", "scaleai", "lyft",
-  "stripe", "discord", "brex", "squarespace", "clear", "affirm",
-  "crunchyroll", "nuro", "pallet", "pinterest", "astranis", "waymo", "figureai", "merge",
-  "databricks", "datadog", "dropbox", "instacart", "mongodb", "twilio", "block",
-  "gitlab", "vercel", "thinkingmachines", "togetherai", "hightouch", "roblox",
-  "jumptrading", "akunacapital", "optiver", "imc", "chicagotrading",
-  "coinbase", "snap", "uber"
-];
 const EMPTY_BODY = { jobs: [], meta: { total: 0 } };
+const greenhouseCompanies = adapterConfigs.find((c) => c.name === "greenhouse")!.companies;
+
+function nockGreenhouseEmpty(except: string[] = []) {
+  for (const company of greenhouseCompanies) {
+    if (except.includes(company)) continue;
+    nock("https://boards-api.greenhouse.io")
+      .get(`/v1/boards/${company}/jobs`)
+      .query({ content: "Job" })
+      .reply(200, EMPTY_BODY);
+  }
+}
 
 describe("Greenhouse Adapter", () => {
   const adapter = createGreenhouseAdapter();
 
   beforeEach(() => {
     nock.cleanAll();
-    // Stub the non-target companies in the config so the adapter's loop is deterministic.
-    for (const company of OTHER_COMPANIES) {
-      nock("https://boards-api.greenhouse.io")
-        .get(`/v1/boards/${company}/jobs`)
-        .query({ content: "Job" })
-        .reply(200, EMPTY_BODY);
-    }
+    nockGreenhouseEmpty(["spacex"]);
   });
 
   it("fetches and parses jobs from Greenhouse boards API", async () => {
@@ -79,12 +75,54 @@ describe("Greenhouse Adapter", () => {
     expect(postings).toHaveLength(0);
   });
 
-  it("handles HTTP error gracefully", async () => {
+  it("isolates a single company HTTP error and keeps sibling boards", async () => {
+    nock.cleanAll();
+    nock("https://boards-api.greenhouse.io")
+      .get("/v1/boards/spacex/jobs")
+      .query({ content: "Job" })
+      .reply(500);
+    nock("https://boards-api.greenhouse.io")
+      .get("/v1/boards/andurilindustries/jobs")
+      .query({ content: "Job" })
+      .reply(200, {
+        jobs: [
+          {
+            id: 789,
+            title: "Software Intern",
+            location: { name: "Costa Mesa, CA" },
+            absolute_url: "https://boards.greenhouse.io/andurilindustries/jobs/789",
+            company_name: "Anduril",
+          },
+        ],
+        meta: { total: 1 },
+      });
+    nockGreenhouseEmpty(["spacex", "andurilindustries"]);
+
+    const postings = await adapter.fetchNewPostings();
+    expect(postings).toHaveLength(1);
+    expect(postings[0].company).toBe("Anduril");
+    expect(postings[0].externalId).toBe("789");
+  });
+
+  it("returns empty when one company fails and siblings are empty", async () => {
     nock("https://boards-api.greenhouse.io")
       .get("/v1/boards/spacex/jobs")
       .query({ content: "Job" })
       .reply(500);
 
-    await expect(adapter.fetchNewPostings()).rejects.toThrow();
+    const postings = await adapter.fetchNewPostings();
+    expect(postings).toHaveLength(0);
+  });
+
+  it("throws AdapterError when every company fails", async () => {
+    nock.cleanAll();
+    for (const company of greenhouseCompanies) {
+      nock("https://boards-api.greenhouse.io")
+        .get(`/v1/boards/${company}/jobs`)
+        .query({ content: "Job" })
+        .reply(500);
+    }
+
+    await expect(adapter.fetchNewPostings()).rejects.toThrow(/greenhouse/i);
   });
 });
