@@ -4,6 +4,7 @@ import { handleRoleAdd, handleRoleRemove, handleRoleAutocomplete } from "./role"
 import { handleStatus } from "./status";
 import { handleLinkChannel } from "./linkchannel";
 import { handleSetup } from "./setup";
+import { handleOnboard } from "./onboard";
 
 const handlers: Record<string, (i: ChatInputCommandInteraction) => Promise<void>> = {
   ping: handlePing,
@@ -12,6 +13,7 @@ const handlers: Record<string, (i: ChatInputCommandInteraction) => Promise<void>
   status: handleStatus,
   linkchannel: handleLinkChannel,
   setup: handleSetup,
+  onboard: handleOnboard,
 };
 
 export async function handleInteraction(interaction: ChatInputCommandInteraction): Promise<void> {

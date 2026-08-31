@@ -5,10 +5,11 @@ import { roleCommand, unroleCommand } from "./role";
 import { statusCommand } from "./status";
 import { linkchannelCommand } from "./linkchannel";
 import { setupCommand } from "./setup";
+import { onboardCommand } from "./onboard";
 
 const commands = [
   pingCommand, roleCommand, unroleCommand,
-  statusCommand, linkchannelCommand, setupCommand,
+  statusCommand, linkchannelCommand, setupCommand, onboardCommand,
 ].map((c) => c.toJSON());
 
 export async function deployCommands(client: Client): Promise<void> {

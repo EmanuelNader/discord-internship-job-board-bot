@@ -53,3 +53,14 @@ model ChannelMap {
 
   @@unique([kind, roleFamily])
 }
+
+model OnboardPanel {
+  id        Int      @id @default(autoincrement())
+  guildId   String   @unique
+  channelId String
+  messageId String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([messageId])
+}

@@ -1,12 +1,13 @@
 import "dotenv/config";
 import { validateEnv } from "@/config/env";
-import { Client, GatewayIntentBits, Events } from "discord.js";
+import { Client, GatewayIntentBits, Events, Partials } from "discord.js";
 import { SourcesManager } from "@/scheduler/index";
 import { getAllAdapters } from "@/adapters/index";
 import { prisma } from "@/db/client";
 import { runBackfill } from "@/scheduler/backfill";
 import { deployCommands } from "@/commands/deploy";
 import { handleInteraction, handleAutocomplete } from "@/commands/index";
+import { handleOnboardReaction } from "@/commands/onboard-reactions";
 import { ensureGuildSetup } from "@/provisioner/index";
 import { Poster } from "@/poster/index";
 
@@ -18,6 +19,7 @@ const client = new Client({
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.GuildMessageReactions,
   ],
+  partials: [Partials.Message, Partials.Channel, Partials.Reaction],
 });
 
 let manager: SourcesManager | null = null;
@@ -68,6 +70,14 @@ client.on(Events.InteractionCreate, async (interaction) => {
   } else if (interaction.isAutocomplete()) {
     await handleAutocomplete(interaction);
   }
+});
+
+client.on(Events.MessageReactionAdd, (reaction, user) => {
+  void handleOnboardReaction(reaction, user, true);
+});
+
+client.on(Events.MessageReactionRemove, (reaction, user) => {
+  void handleOnboardReaction(reaction, user, false);
 });
 
 client.login(env.DISCORD_TOKEN);
