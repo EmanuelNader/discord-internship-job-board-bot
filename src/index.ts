@@ -38,30 +38,48 @@ process.once("SIGINT", () => void shutdown("SIGINT"));
 process.once("SIGTERM", () => void shutdown("SIGTERM"));
 
 client.once(Events.ClientReady, async () => {
-  console.log(`Logged in as ${client.user?.tag}`);
+  try {
+    console.log(`Logged in as ${client.user?.tag}`);
 
-  await ensureGuildSetup(client);
+    await client.guilds.fetch();
+    if (client.guilds.cache.size === 0) {
+      throw new Error(
+        "Bot is not in any guild. Invite it with the bot and applications.commands scopes, then restart."
+      );
+    }
+    if (client.guilds.cache.size > 1) {
+      const guild = client.guilds.cache.first()!;
+      console.warn(
+        `Bot is in ${client.guilds.cache.size} guilds; using ${guild.name} (${guild.id}) only`
+      );
+    }
 
-  await deployCommands(client);
+    await ensureGuildSetup(client);
 
-  poster = new Poster(client, prisma);
+    await deployCommands(client);
 
-  if (env.BACKFILL) {
-    console.log(`Running backfill (limit ${env.BACKFILL_LIMIT} per source)...`);
-    await runBackfill(
-      { enabled: true, limitPerSource: env.BACKFILL_LIMIT },
-      (posting, hash) => poster!.send(posting, hash)
+    poster = new Poster(client, prisma);
+
+    if (env.BACKFILL) {
+      console.log(`Running backfill (limit ${env.BACKFILL_LIMIT} per source)...`);
+      await runBackfill(
+        { enabled: true, limitPerSource: env.BACKFILL_LIMIT },
+        (posting, hash) => poster!.send(posting, hash)
+      );
+      console.log("Backfill complete");
+    }
+
+    manager = new SourcesManager(
+      getAllAdapters(),
+      (posting, hash) => poster!.send(posting, hash),
+      (source, error) => console.error(`[${source}] ${error.message}`)
     );
-    console.log("Backfill complete");
+    manager.start();
+    console.log("SourcesManager started");
+  } catch (err) {
+    console.error("Startup failed:", err);
+    process.exit(1);
   }
-
-  manager = new SourcesManager(
-    getAllAdapters(),
-    (posting, hash) => poster!.send(posting, hash),
-    (source, error) => console.error(`[${source}] ${error.message}`)
-  );
-  manager.start();
-  console.log("SourcesManager started");
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
@@ -80,4 +98,7 @@ client.on(Events.MessageReactionRemove, (reaction, user) => {
   void handleOnboardReaction(reaction, user, false);
 });
 
-client.login(env.DISCORD_TOKEN);
+void Promise.resolve(client.login(env.DISCORD_TOKEN)).catch((err) => {
+  console.error("Login failed:", err);
+  process.exit(1);
+});
