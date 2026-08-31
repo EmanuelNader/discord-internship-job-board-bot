@@ -9,6 +9,7 @@ export interface RoleTitleConfig {
 export interface RoleFamilyConfig {
   family: RoleFamily;
   channelName: string;   // e.g., "swe-jobs"
+  emoji: string;         // Unicode emoji for /onboard reaction roles
   titles: RoleTitleConfig[];
 }
 
@@ -16,6 +17,7 @@ export const roleFamilies: RoleFamilyConfig[] = [
   {
     family: "swe",
     channelName: "swe-jobs",
+    emoji: "💻",
     titles: [
       { title: "swe-frontend", roleName: "SWE - Frontend", description: "Frontend engineering internships" },
       { title: "swe-backend", roleName: "SWE - Backend", description: "Backend engineering internships" },
@@ -28,6 +30,7 @@ export const roleFamilies: RoleFamilyConfig[] = [
   {
     family: "pm-program",
     channelName: "pm-program-jobs",
+    emoji: "📋",
     titles: [
       { title: "pm-product", roleName: "PM - Product", description: "Product management internships" },
       { title: "pm-program", roleName: "PM - Program", description: "Program management internships" },
@@ -37,6 +40,7 @@ export const roleFamilies: RoleFamilyConfig[] = [
   {
     family: "hardware",
     channelName: "hardware-jobs",
+    emoji: "🔌",
     titles: [
       { title: "hw-silicon", roleName: "HW - Silicon", description: "Silicon/VLSI internships" },
       { title: "hw-pcb", roleName: "HW - PCB", description: "PCB design internships" },
@@ -47,6 +51,7 @@ export const roleFamilies: RoleFamilyConfig[] = [
   {
     family: "data",
     channelName: "data-jobs",
+    emoji: "📊",
     titles: [
       { title: "data-scientist", roleName: "Data - Scientist", description: "Data science internships" },
       { title: "data-engineer", roleName: "Data - Engineer", description: "Data engineering internships" },
@@ -56,6 +61,7 @@ export const roleFamilies: RoleFamilyConfig[] = [
   {
     family: "ml",
     channelName: "ml-ai-jobs",
+    emoji: "🤖",
     titles: [
       { title: "ml-engineer", roleName: "ML - Engineer", description: "ML engineering internships" },
       { title: "ml-researcher", roleName: "ML - Researcher", description: "ML research internships" },
@@ -65,6 +71,7 @@ export const roleFamilies: RoleFamilyConfig[] = [
   {
     family: "engineering",
     channelName: "engineering-jobs",
+    emoji: "⚙️",
     titles: [
       { title: "eng-structural", roleName: "Eng - Structural", description: "Structural engineering internships" },
       { title: "eng-civil", roleName: "Eng - Civil", description: "Civil engineering internships" },
@@ -77,6 +84,7 @@ export const roleFamilies: RoleFamilyConfig[] = [
   {
     family: "design",
     channelName: "design-jobs",
+    emoji: "🎨",
     titles: [
       { title: "design-ux", roleName: "Design - UX", description: "UX design internships" },
       { title: "design-ui", roleName: "Design - UI", description: "UI design internships" },
@@ -87,6 +95,7 @@ export const roleFamilies: RoleFamilyConfig[] = [
   {
     family: "growth",
     channelName: "growth-jobs",
+    emoji: "📈",
     titles: [
       { title: "growth-general", roleName: "Growth - General", description: "General growth marketing internships" },
       { title: "growth-lifecycle", roleName: "Growth - Lifecycle", description: "Lifecycle marketing internships" },

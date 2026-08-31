@@ -1,91 +1,81 @@
-# Session Handoff — Plan 3 Complete, Merged to main
+# Session Handoff — Plan 4 Complete (awaiting manual smoke)
 
-> **Branch state:** `plan/02-adapters` and `plan/03-poster` both deleted after merge.
-> **Current branch:** `main` at commit `e7111b0`
-
----
-
-## What's Done
-
-### Plan 1 — scaffold + contract + normalize + DB (`main`)
-- Project scaffold (ESM TypeScript, Vitest, Prisma, discord.js)
-- `src/lib/types.ts` — `RawPosting`, `Posting`, `SourceAdapter`, all enums
-- `src/lib/normalize.ts` — `detectLevel`, `detectRoleFamily`, `detectRoleTitles`, `dedupHash` (119 tests)
-- `prisma/schema.prisma` — `Posting`, `Source`, `ChannelMap` models (SQLite)
-- `src/config/` — `adapters.config.ts`, `roles.config.ts`
-- `src/db/client.ts` — Prisma singleton
-
-### Plan 2 — adapters + scheduler + backfill (`main`)
-- `src/adapters/base.ts` — `fetchJson`, `fetchHtml`, `AdapterError`, normalize helpers
-- `src/adapters/index.ts` — registry + factory for 6 adapters
-- 6 adapters (each with nock fixture tests):
-  - `greenhouse.ts` — `boards.greenhouse.io/{company}/embed/jobboard` JSON with pagination
-  - `ashby.ts` — `jobs.ashbyhq.com/{company}` JSON
-  - `lever.ts` — `api.lever.co/v0/postings/{company}?mode=json`
-  - `workday.ts` — `{company}.wd1.myworkdayjobs.com/wd1/{company}/careers` POST with pagination
-  - `simplify.ts` — Cheerio HTML scraper (`companies: []` in config for Phase 1)
-  - `github.ts` — `api.github.com/repos/{owner}/{repo}/issues` + issue body parsing
-- `src/scheduler/index.ts` — `SourcesManager` class with intervals, dedup upsert, health tracking
-- `src/scheduler/backfill.ts` — insert-only backfill with `postedAt` set
-
-### Plan 3 — poster + commands + provisioning + deploy (`main`)
-- `src/index.ts` — Bot entry point: Client init, `ready` handler, SourcesManager wiring, backfill on first boot
-- `src/poster/embed.ts` — `buildPostingEmbed()` pure function with level colors
-- `src/poster/index.ts` — `Poster` class: ChannelMap lookup, role pings via `allowedMentions`, channel cache, `postedAt` update
-- `src/provisioner/index.ts` — `ensureGuildSetup()`: idempotent channel + role + ChannelMap creation from config
-- `src/commands/` — 6 slash commands:
-  - `/ping` — latency check
-  - `/role <titleRole>` — self-assign ping role
-  - `/unrole <titleRole>` — remove ping role
-  - `/status` — per-source health counters
-  - `/linkchannel <family> <#channel>` — [Admin] bind channel to role family
-  - `/setup` — [Admin] idempotent channel/role provisioning
-- `src/commands/deploy.ts` — REST API command registration
-- `src/commands/index.ts` — interaction dispatcher
-
-### Validation
-- **157 tests passing** (13 test files)
-- **`tsc --noEmit` clean** — zero errors
-- Review findings fixed: role pings, DISCORD_TOKEN guard, unknown cmd handler, dead imports, empty status, TextChannel type check, poster cache + error guard
+> **Current branch:** `plan/04-deploy` (pushed to `origin/plan/04-deploy`)
+> **Code + docs for Plan 4 landed.** Manual Discord smoke remains operator-owned before merge to `main`.
 
 ---
 
-## Next Up (Plan 4 Ideas — not spec'd)
+## What's Done (Plan 4)
 
-1. **Deployment config** — PM2 `ecosystem.config.js`, `.env` template, build script, VPS setup docs
-2. **Manual smoke test** — invite bot to server, run `/setup`, run `BACKFILL=true`, verify channels + posts + pings
-3. **Reaction roles** — let users self-assign ping roles by reacting to a message
-4. **Additional sources** — LinkedIn (ToS-permitting), Reddit RSS, company career pages
-5. **New-grad / early-career support** — if scope expands, new `kind` + channels + adapters
-6. **Per-user keyword/location filters** — server-side matching engine
+Plans 1–3 remain on `main`. Plan 4 hardens deploy/ops on `plan/04-deploy`:
+
+| Task | Landing |
+|------|---------|
+| Env validation | `src/config/env.ts` + `dotenv/config` at boot — fail-fast on missing Discord/DB env |
+| Production build | `tsc && tsc-alias` — path aliases resolved in `dist/` |
+| Prisma migration | Baseline under `prisma/migrations/`; `npx prisma migrate deploy` for fresh DBs |
+| Poster rate limit | Discord sends queued ~1 job / 2s |
+| Backfill → Discord | Backfill leaves `postedAt` null and posts via Poster (not silent DB-only) |
+| Graceful shutdown | SIGINT/SIGTERM stop scheduler + disconnect Prisma |
+| PM2 | `ecosystem.config.cjs` (`intern-board` → `dist/index.js`) |
+| Deploy runbook | `docs/DEPLOY.md` — local/VPS + **First-boot Discord smoke** checklist |
+
+Plans 1–3 deliverables (adapters, scheduler, poster, commands, provisioner) unchanged in scope.
+
+---
+
+## Smoke Checklist
+
+Use **[docs/DEPLOY.md](../../docs/DEPLOY.md)** — section **First-boot Discord smoke** (and Task 9 checklist in the plan if needed).
+
+Operator-owned; not claimed done in this handoff.
+
+---
+
+## Next Up (after merge)
+
+1. **Manual smoke on a dev Discord guild** (see `docs/DEPLOY.md`)
+2. **Merge `plan/04-deploy` → `main`** after review + smoke (or merge then smoke on staging — operator choice)
+3. **Optional ops:** enable ashby / lever / workday in adapter config after smoke looks good
+4. **Later (out of Plan 4):** reaction roles; keyword filters; new-grad channels — not in this plan
 
 ---
 
 ## Key Files Reference
 
 | File | Responsibility |
-|------|---------------|
-| `src/index.ts` | Bot boot: client, SourcesManager, provisioner, commands |
-| `src/scheduler/index.ts` | Polling loop, dedup, health tracking |
-| `src/poster/index.ts` | Discord send + channel routing + role pings |
-| `src/commands/*.ts` | Slash command handlers |
-| `src/provisioner/index.ts` | Idempotent channel/role creation |
-| `src/config/roles.config.ts` | Role taxonomy (8 families, 26 titles) |
+|------|----------------|
+| `docs/DEPLOY.md` | VPS/local runbook + Discord smoke checklist |
+| `ecosystem.config.cjs` | PM2 process (`intern-board`) |
+| `src/config/env.ts` | Required/optional env parsing + fail-fast |
+| `src/index.ts` | Boot: dotenv, validateEnv, backfill→poster, SIGINT/SIGTERM |
+| `src/poster/index.ts` | Rate-limited Discord send queue |
+| `src/scheduler/backfill.ts` | Seed postings with `postedAt` null; invoke poster path |
+| `prisma/migrations/` | Baseline for `prisma migrate deploy` |
+| `.env.example` | Env template (`BACKFILL*`, `NODE_ENV`, tokens) |
+| `src/scheduler/index.ts` | Polling loop, dedup, health |
+| `src/commands/*.ts` | Slash commands |
+| `src/provisioner/index.ts` | Idempotent channel/role + ChannelMap setup |
 | `src/config/adapters.config.ts` | Source companies + poll intervals |
-| `prisma/schema.prisma` | Posting, Source, ChannelMap models |
+| `src/config/roles.config.ts` | Role taxonomy |
 
 ## Commands to Resume
 
 ```bash
-# Run tests
+git checkout plan/04-deploy
+git pull
+
+# Automated verify
+npm ci
+npx prisma migrate deploy
 npm test
-
-# Type-check
 npx tsc --noEmit
+npm run build
 
-# Dev start (after setting .env)
+# Dev / prod process
 npm run dev
-
-# Generate Prisma migration after schema changes
-npx prisma migrate dev --name <name>
+# or
+npm run build && pm2 start ecosystem.config.cjs
+# pm2 logs intern-board
+# pm2 restart intern-board
 ```

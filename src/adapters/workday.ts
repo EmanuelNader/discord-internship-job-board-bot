@@ -1,59 +1,70 @@
 import type { SourceAdapter, RawPosting } from "@/lib/types";
 import { adapterConfigs } from "@/config/adapters.config";
-import { fetchJson, AdapterError } from "./base";
+import { fetchJson, collectFromTargets } from "./base";
 
 interface WorkdayJob {
-  jobId: string;
   title: string;
-  locationsText: string;
+  locationsText?: string;
   externalPath: string;
+  bulletFields?: string[];
 }
 
 interface WorkdayResponse {
   jobPostings: WorkdayJob[];
   total: number;
-  page: number;
-  pageSize: number;
 }
 
 export function createWorkdayAdapter(): SourceAdapter {
   const config = adapterConfigs.find((c) => c.name === "workday");
   if (!config) throw new Error("Workday config not found");
+  const boards = config.workdayBoards ?? [];
 
   return {
     name: "workday",
     pollIntervalSec: config.pollIntervalSec,
     async fetchNewPostings(): Promise<RawPosting[]> {
-      const postings: RawPosting[] = [];
+      return collectFromTargets(
+        "workday",
+        boards,
+        async (board) => {
+          const postings: RawPosting[] = [];
+          const pageSize = 20;
+          let offset = 0;
+          let total = Infinity;
 
-      for (const company of config.companies) {
-        let page = 1;
-        let hasMore = true;
-
-        while (hasMore) {
-          try {
+          while (offset < total) {
             const data = await fetchJson<WorkdayResponse>(
-              `https://${company}.wd1.myworkdayjobs.com/wd1/${company}/careers`,
-              { method: "POST", body: JSON.stringify({ page, pageSize: 20 }) }
+              `https://${board.host}/wday/cxs/${board.tenant}/${board.site}/jobs`,
+              {
+                method: "POST",
+                body: JSON.stringify({
+                  appliedFacets: {},
+                  limit: pageSize,
+                  offset,
+                  searchText: "",
+                }),
+              }
             );
-            for (const job of data.jobPostings) {
+            const jobs = data.jobPostings ?? [];
+            total = data.total ?? jobs.length;
+            for (const job of jobs) {
+              const jobId = job.bulletFields?.[0] ?? job.externalPath;
               postings.push({
                 title: job.title,
-                company: company.charAt(0).toUpperCase() + company.slice(1),
-                location: job.locationsText,
-                url: `https://${company}.wd1.myworkdayjobs.com${job.externalPath}`,
-                externalId: job.jobId,
+                company: board.name,
+                location: job.locationsText ?? null,
+                url: `https://${board.host}/${board.site}${job.externalPath}`,
+                externalId: jobId,
                 raw: job as unknown as Record<string, unknown>,
               });
             }
-            hasMore = data.jobPostings.length === data.pageSize && page * data.pageSize < data.total;
-            page++;
-          } catch (err) {
-            throw new AdapterError("workday", `Failed fetching ${company}`, err as Error);
+            if (jobs.length === 0) break;
+            offset += jobs.length;
           }
-        }
-      }
-      return postings;
+          return postings;
+        },
+        (board) => board.name
+      );
     },
   };
 }

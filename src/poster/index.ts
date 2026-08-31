@@ -15,15 +15,60 @@ interface PostingToSend {
   postedAt?: Date;
 }
 
+type QueueItem = {
+  posting: PostingToSend;
+  dedupHash: string;
+  resolve: () => void;
+  reject: (e: unknown) => void;
+};
+
 export class Poster {
   private channelCache = new Map<string, TextChannel>();
+  private queue: QueueItem[] = [];
+  private draining = false;
+  private stopped = false;
 
   constructor(
     private readonly client: Client,
-    private readonly prismaClient?: typeof prisma
+    private readonly prismaClient?: typeof prisma,
+    private readonly intervalMs = 2000
   ) {}
 
-  async send(
+  async send(posting: PostingToSend, dedupHash: string): Promise<void> {
+    if (this.stopped) throw new Error("Poster stopped");
+    return new Promise((resolve, reject) => {
+      this.queue.push({ posting, dedupHash, resolve, reject });
+      void this.drain();
+    });
+  }
+
+  stop(): void {
+    this.stopped = true;
+    this.queue = [];
+  }
+
+  private async drain(): Promise<void> {
+    if (this.draining) return;
+    this.draining = true;
+    try {
+      while (this.queue.length > 0 && !this.stopped) {
+        const item = this.queue.shift()!;
+        try {
+          await this.deliver(item.posting, item.dedupHash);
+          item.resolve();
+        } catch (e) {
+          item.reject(e);
+        }
+        if (this.queue.length > 0) {
+          await new Promise((r) => setTimeout(r, this.intervalMs));
+        }
+      }
+    } finally {
+      this.draining = false;
+    }
+  }
+
+  private async deliver(
     posting: PostingToSend,
     dedupHash: string
   ): Promise<void> {

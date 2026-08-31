@@ -1,17 +1,26 @@
 import type { SourceAdapter, RawPosting } from "@/lib/types";
 import { adapterConfigs } from "@/config/adapters.config";
-import { fetchJson, AdapterError } from "./base";
+import { fetchJson, collectFromTargets } from "./base";
 
 interface AshbyJob {
   id: string;
   title: string;
-  location: string;
-  jobUrl: string;
-  department?: string;
+  location?: string;
+  jobUrl?: string;
+  applyUrl?: string;
+  publishedAt?: string;
+  isListed?: boolean;
 }
 
 interface AshbyResponse {
   jobs: AshbyJob[];
+}
+
+function titleCaseSlug(slug: string): string {
+  return slug
+    .split("-")
+    .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+    .join(" ");
 }
 
 export function createAshbyAdapter(): SourceAdapter {
@@ -22,26 +31,27 @@ export function createAshbyAdapter(): SourceAdapter {
     name: "ashby",
     pollIntervalSec: config.pollIntervalSec,
     async fetchNewPostings(): Promise<RawPosting[]> {
-      const postings: RawPosting[] = [];
-
-      for (const company of config.companies) {
-        try {
-          const data = await fetchJson<AshbyResponse>(`https://jobs.ashbyhq.com/${company}`);
-          for (const job of data.jobs) {
-            postings.push({
+      return collectFromTargets(
+        "ashby",
+        config.companies,
+        async (company) => {
+          const data = await fetchJson<AshbyResponse>(
+            `https://api.ashbyhq.com/posting-api/job-board/${encodeURIComponent(company)}`
+          );
+          return (data.jobs ?? [])
+            .filter((job) => job.isListed !== false && job.title && (job.jobUrl || job.applyUrl))
+            .map((job) => ({
               title: job.title,
-              company: company.charAt(0).toUpperCase() + company.slice(1),
-              location: job.location,
-              url: job.jobUrl,
+              company: titleCaseSlug(company),
+              location: job.location ?? null,
+              url: job.jobUrl ?? job.applyUrl!,
               externalId: job.id,
+              publishedAt: job.publishedAt,
               raw: job as unknown as Record<string, unknown>,
-            });
-          }
-        } catch (err) {
-          throw new AdapterError("ashby", `Failed fetching ${company}`, err as Error);
-        }
-      }
-      return postings;
+            }));
+        },
+        (company) => company
+      );
     },
   };
 }

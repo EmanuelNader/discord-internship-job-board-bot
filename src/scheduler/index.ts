@@ -41,6 +41,7 @@ export class SourcesManager {
     let droppedNonIntern = 0;
     let droppedUnclassified = 0;
     let droppedNonUS = 0;
+    let droppedDuplicate = 0;
     let lastError: string | null = null;
 
     try {
@@ -71,8 +72,7 @@ export class SourcesManager {
         // Check if this job content was already seen from another source
         const existingByContent = await prisma.posting.findUnique({ where: { contentHash: contentHashValue } });
         if (existingByContent) {
-          // Job already exists from another source - skip creating duplicate
-          droppedUnclassified++;
+          droppedDuplicate++;
           continue;
         }
 
@@ -128,6 +128,7 @@ export class SourcesManager {
           droppedNonIntern,
           droppedUnclassified,
           droppedNonUS,
+          droppedDuplicate,
           lastError,
           pollIntervalSec: adapter.pollIntervalSec,
         },
@@ -137,6 +138,7 @@ export class SourcesManager {
           droppedNonIntern: { increment: droppedNonIntern },
           droppedUnclassified: { increment: droppedUnclassified },
           droppedNonUS: { increment: droppedNonUS },
+          droppedDuplicate: { increment: droppedDuplicate },
           lastError,
         },
       });

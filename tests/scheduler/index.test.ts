@@ -130,6 +130,31 @@ describe("SourcesManager", () => {
     );
   });
 
+  it("counts content-hash hits as droppedDuplicate", async () => {
+    mockAdapter.fetchNewPostings = vi.fn().mockResolvedValue([
+      { title: "Intern", company: "Acme", url: "https://a.com/1", raw: {} },
+    ]);
+    mockDetectLevel.mockReturnValue("internship");
+    mockDetectRoleFamily.mockReturnValue(["swe"]);
+    mockDetectRoleTitles.mockReturnValue([]);
+    mockDedupHash.mockReturnValue("hash123");
+    mockContentHash.mockReturnValue("content-hash-123");
+    (prisma.posting.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: 9,
+      contentHash: "content-hash-123",
+      postedAt: new Date(),
+    });
+
+    const manager = new SourcesManager([mockAdapter], onNewPosting, onError);
+    await manager.runOnce("test");
+
+    expect(onNewPosting).not.toHaveBeenCalled();
+    expect(prisma.posting.upsert).not.toHaveBeenCalled();
+    const call = (prisma.source.upsert as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    expect(call.create.droppedDuplicate).toBe(1);
+    expect(call.create.droppedUnclassified).toBe(0);
+  });
+
   it("does not call onNewPosting for already-posted duplicates", async () => {
     mockAdapter.fetchNewPostings = vi.fn().mockResolvedValue([
       { title: "Intern", company: "Acme", url: "https://a.com/1", raw: {} },

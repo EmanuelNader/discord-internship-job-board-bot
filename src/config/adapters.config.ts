@@ -1,45 +1,74 @@
 import type { SourceName } from "@/lib/types";
 
+export interface WorkdayBoard {
+  name: string;
+  host: string;
+  tenant: string;
+  site: string;
+}
+
 export interface AdapterConfig {
   name: SourceName;
   enabled: boolean;
   pollIntervalSec: number;
-  companies: string[]; // company slugs for ATS; repo names for GitHub
+  companies: string[]; // company slugs for ATS; owner/repo[#path] for GitHub
+  workdayBoards?: WorkdayBoard[];
 }
 
 export const adapterConfigs: AdapterConfig[] = [
   { name: "greenhouse", enabled: true, pollIntervalSec: 300, companies: [
-    "spacex", "andurilindustries", "airtable", "airbnb", "fireworksai", "figma", "twitch", "neuralink",
+    "spacex", "andurilindustries", "airtable", "airbnb", "figma", "twitch", "neuralink",
     "robinhood", "xai", "anthropic", "reddit", "cloudflare", "scaleai", "lyft",
     "stripe", "discord", "brex", "squarespace", "clear", "affirm",
     "crunchyroll", "nuro", "pallet", "pinterest", "astranis", "waymo", "figureai", "merge",
     "databricks", "datadog", "dropbox", "instacart", "mongodb", "twilio", "block",
-    "gitlab", "vercel", "thinkingmachines", "togetherai", "hightouch", "roblox",
+    "gitlab", "vercel", "togetherai", "hightouch", "roblox",
     "jumptrading", "akunacapital", "optiver", "imc", "chicagotrading",
-    "coinbase", "snap", "uber"
+    "coinbase",
+    "asana", "okta", "hubspot", "flexport", "chime", "sofi",
+    "rocketlab", "relativity", "lucidmotors",
   ]},
-  { name: "ashby", enabled: false, pollIntervalSec: 300, companies: [
-    "chalk", "notion", "ramp", "snowflake", "decagon", "distyl", "elevenlabs", "flow-engineering",
-    "baseten", "browserbase", "base-power-company", "clickup", "apex-technology-inc", "light",
-    "linear", "sift", "stack", "gigaml", "sesame", "happyrobot", "granola", "sunday",
+  { name: "ashby", enabled: true, pollIntervalSec: 300, companies: [
+    "chalk", "notion", "ramp", "snowflake", "decagon", "distyl", "elevenlabs",
+    "baseten", "browserbase", "clickup", "apex-technology-inc", "light",
+    "linear", "sift", "gigaml", "sesame", "granola", "sunday",
     "openai", "perplexity", "pylon", "cohere", "traversal", "harvey", "sentry", "braintrust",
-    "eliseai", "resolve-ai", "mintlify", "roadrunner", "supabase", "wispr-flow", "flint",
-    "cursor", "modal-labs", "langchain", "cognition", "paraform", "judgment-labs",
-    "general-intelligence-company", "saronic", "plaid", "exa", "trajectory", "krea",
-    "vizcom", "posthog", "poke", "sierra", "workweave", "reducto", "console", "workoss", "salient"
+    "eliseai", "mintlify", "roadrunner", "supabase", "wispr-flow", "flint",
+    "cursor", "langchain", "cognition", "paraform",
+    "saronic", "plaid", "exa", "trajectory", "krea",
+    "vizcom", "posthog", "sierra", "workweave", "reducto", "console", "salient",
+    "replit", "vanta", "mercury",
   ]},
-  { name: "lever", enabled: false, pollIntervalSec: 300, companies: [
-    "palantir", "spotify", "zoox", "belvedere-trading"
+  { name: "lever", enabled: true, pollIntervalSec: 300, companies: [
+    "palantir", "spotify", "zoox", "belvederetrading",
   ]},
-  { name: "workday", enabled: false, pollIntervalSec: 300, companies: [
-    "adobe", "nvidia", "salesforce", "expedia", "turo", "blue-origin",
-    "general-motors", "disney", "slack", "capital-one", "paypal"
+  { name: "workday", enabled: true, pollIntervalSec: 300, companies: [
+    "nvidia", "adobe", "salesforce", "paypal", "blue-origin", "disney", "slack",
+    "3m", "abbott",
+    "caterpillar", "qualcomm", "applied-materials", "rtx", "dupont", "chevron",
+  ], workdayBoards: [
+    { name: "NVIDIA", host: "nvidia.wd5.myworkdayjobs.com", tenant: "nvidia", site: "NVIDIAExternalCareerSite" },
+    { name: "Adobe", host: "adobe.wd5.myworkdayjobs.com", tenant: "adobe", site: "external_experienced" },
+    { name: "Salesforce", host: "salesforce.wd12.myworkdayjobs.com", tenant: "salesforce", site: "External_Career_Site" },
+    { name: "PayPal", host: "paypal.wd1.myworkdayjobs.com", tenant: "paypal", site: "jobs" },
+    { name: "Blue Origin", host: "blueorigin.wd5.myworkdayjobs.com", tenant: "blueorigin", site: "BlueOrigin" },
+    { name: "Disney", host: "disney.wd5.myworkdayjobs.com", tenant: "disney", site: "disneycareer" },
+    { name: "Slack", host: "salesforce.wd12.myworkdayjobs.com", tenant: "salesforce", site: "Slack" },
+    { name: "3M", host: "3m.wd1.myworkdayjobs.com", tenant: "3m", site: "Search" },
+    { name: "Abbott", host: "abbott.wd5.myworkdayjobs.com", tenant: "abbott", site: "abbottcareers" },
+    { name: "Caterpillar", host: "cat.wd5.myworkdayjobs.com", tenant: "cat", site: "CaterpillarCareers" },
+    { name: "Qualcomm", host: "qualcomm.wd12.myworkdayjobs.com", tenant: "qualcomm", site: "External" },
+    { name: "Applied Materials", host: "amat.wd1.myworkdayjobs.com", tenant: "amat", site: "External" },
+    { name: "RTX", host: "globalhr.wd5.myworkdayjobs.com", tenant: "globalhr", site: "REC_RTX_Ext_Gateway" },
+    { name: "DuPont", host: "dupont.wd5.myworkdayjobs.com", tenant: "dupont", site: "Jobs" },
+    { name: "Chevron", host: "chevron.wd5.myworkdayjobs.com", tenant: "chevron", site: "jobs" },
   ]},
-  { name: "simplify", enabled: true, pollIntervalSec: 900, companies: [] },
+  { name: "simplify", enabled: false, pollIntervalSec: 900, companies: [] },
   { name: "github", enabled: true, pollIntervalSec: 900, companies: [
-    "SimplifyJobs/Summer2026-Internships",
+    "SimplifyJobs/Summer2027-Internships",
+    "SimplifyJobs/Summer2027-Internships#README-Off-Season.md",
     "vanshb03/Summer2027-Internships",
-    "speedyapply/2027-SWE-College-Jobs"
+    "speedyapply/2027-SWE-College-Jobs",
   ]},
   // Custom/proprietary ATS — scrapers not yet implemented
   { name: "custom", enabled: false, pollIntervalSec: 3600, companies: [

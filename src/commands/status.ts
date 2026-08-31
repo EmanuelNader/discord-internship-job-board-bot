@@ -26,6 +26,7 @@ export async function handleStatus(interaction: ChatInputCommandInteraction): Pr
         `Dropped (non-intern): ${s.droppedNonIntern}`,
         `Dropped (non-US): ${s.droppedNonUS}`,
         `Dropped (unclassified): ${s.droppedUnclassified}`,
+        `Dropped (duplicate): ${s.droppedDuplicate}`,
         `Error: ${s.lastError ?? "none"}`,
       ].join("\n"),
     });

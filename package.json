@@ -5,8 +5,10 @@
   "private": true,
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc",
+    "build": "tsc && tsc-alias -p tsconfig.json --resolve-full-paths && node scripts/assert-dist-esm.mjs",
     "start": "node dist/index.js",
+    "pm2:start": "pm2 start ecosystem.config.cjs",
+    "pm2:logs": "pm2 logs intern-board",
     "test": "vitest run",
     "test:watch": "vitest",
     "db:generate": "prisma generate",
@@ -29,6 +31,7 @@
     "discord-api-types": "^0.38.51",
     "nock": "^13.5.4",
     "prisma": "^5.18.0",
+    "tsc-alias": "^1.9.1",
     "tsx": "^4.17.0",
     "typescript": "^5.5.4",
     "vitest": "^2.0.5"

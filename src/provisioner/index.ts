@@ -4,7 +4,11 @@ import { prisma } from "@/db/client";
 
 export async function ensureGuildSetup(client: Client): Promise<void> {
   const guild = client.guilds.cache.first();
-  if (!guild) throw new Error("Bot is not in any guild");
+  if (!guild) {
+    throw new Error(
+      "Bot is not in any guild. Invite it with the bot and applications.commands scopes, then restart."
+    );
+  }
 
   const existingChannels = await guild.channels.fetch();
   const existingRoles = await guild.roles.fetch();

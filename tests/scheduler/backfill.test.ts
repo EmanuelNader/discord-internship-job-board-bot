@@ -38,16 +38,67 @@ import { runBackfill } from "@/scheduler/backfill";
 const { prisma } = await import("@/db/client");
 
 describe("Backfill", () => {
+  let onNewPosting: ReturnType<typeof vi.fn>;
+
   beforeEach(() => {
     vi.clearAllMocks();
+    onNewPosting = vi.fn().mockResolvedValue(undefined);
   });
 
   it("skips when disabled", async () => {
-    await runBackfill({ enabled: false, limitPerSource: 100 });
+    await runBackfill({ enabled: false, limitPerSource: 100 }, onNewPosting);
     expect(mockGetAllAdapters).not.toHaveBeenCalled();
+    expect(onNewPosting).not.toHaveBeenCalled();
   });
 
-  it("runs all adapters and upserts postings with postedAt", async () => {
+  it("creates postings with postedAt null and calls onNewPosting", async () => {
+    const publishedAt = new Date("2026-06-15T10:00:00Z");
+    const firstSeenAt = new Date("2026-06-16T10:00:00Z");
+    mockGetAllAdapters.mockReturnValue([
+      {
+        name: "test",
+        pollIntervalSec: 300,
+        fetchNewPostings: vi.fn().mockResolvedValue([
+          { title: "Software Engineer Intern", company: "Acme", location: "SF", url: "https://a.com/1", externalId: "ext1", publishedAt: publishedAt.toISOString(), raw: {} },
+        ]),
+      },
+    ]);
+    mockDetectLevel.mockReturnValue("internship");
+    mockDetectRoleFamily.mockReturnValue(["swe"]);
+    mockDetectRoleTitles.mockReturnValue(["swe-frontend"]);
+    mockDedupHash.mockReturnValue("hash123");
+    (prisma.posting.findUnique as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce(null) // contentHash check
+      .mockResolvedValueOnce({ id: 1, dedupHash: "hash123", postedAt: null, publishedAt, firstSeenAt });
+    (prisma.posting.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 1 });
+
+    await runBackfill({ enabled: true, limitPerSource: 100 }, onNewPosting);
+
+    expect(prisma.posting.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { dedupHash: "hash123" },
+        create: expect.objectContaining({
+          postedAt: null,
+          publishedAt,
+        }),
+      })
+    );
+
+    expect(onNewPosting).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Software Engineer Intern",
+        company: "Acme",
+        sourceName: "test",
+        roleFamily: ["swe"],
+        roleTitles: ["swe-frontend"],
+        level: "internship",
+        postedAt: publishedAt,
+      }),
+      "hash123"
+    );
+  });
+
+  it("does not call onNewPosting for existing dedupHash already posted", async () => {
     mockGetAllAdapters.mockReturnValue([
       {
         name: "test",
@@ -61,20 +112,41 @@ describe("Backfill", () => {
     mockDetectRoleFamily.mockReturnValue(["swe"]);
     mockDetectRoleTitles.mockReturnValue(["swe-frontend"]);
     mockDedupHash.mockReturnValue("hash123");
-    (prisma.posting.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(null); // no existing contentHash
+    (prisma.posting.findUnique as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce(null) // contentHash check
+      .mockResolvedValueOnce({ id: 1, dedupHash: "hash123", postedAt: new Date(), publishedAt: null, firstSeenAt: new Date() });
     (prisma.posting.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 1 });
 
-    await runBackfill({ enabled: true, limitPerSource: 100 });
+    await runBackfill({ enabled: true, limitPerSource: 100 }, onNewPosting);
 
-    expect(prisma.posting.upsert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { dedupHash: "hash123" },
-        create: expect.objectContaining({
-          postedAt: expect.any(Date),
-          publishedAt: null,
-        }),
-      })
-    );
+    expect(prisma.posting.upsert).toHaveBeenCalled();
+    expect(onNewPosting).not.toHaveBeenCalled();
+  });
+
+  it("does not call onNewPosting when contentHash already exists", async () => {
+    mockGetAllAdapters.mockReturnValue([
+      {
+        name: "test",
+        pollIntervalSec: 300,
+        fetchNewPostings: vi.fn().mockResolvedValue([
+          { title: "Software Engineer Intern", company: "Acme", location: "SF", url: "https://a.com/1", externalId: "ext1", raw: {} },
+        ]),
+      },
+    ]);
+    mockDetectLevel.mockReturnValue("internship");
+    mockDetectRoleFamily.mockReturnValue(["swe"]);
+    mockDetectRoleTitles.mockReturnValue(["swe-frontend"]);
+    mockDedupHash.mockReturnValue("hash123");
+    (prisma.posting.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: 99,
+      contentHash: "content-hash-123",
+      postedAt: new Date(),
+    });
+
+    await runBackfill({ enabled: true, limitPerSource: 100 }, onNewPosting);
+
+    expect(prisma.posting.upsert).not.toHaveBeenCalled();
+    expect(onNewPosting).not.toHaveBeenCalled();
   });
 
   it("respects limitPerSource", async () => {
@@ -96,7 +168,7 @@ describe("Backfill", () => {
     (prisma.posting.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(null);
     (prisma.posting.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 1 });
 
-    await runBackfill({ enabled: true, limitPerSource: 2 });
+    await runBackfill({ enabled: true, limitPerSource: 2 }, onNewPosting);
 
     expect(prisma.posting.upsert).toHaveBeenCalledTimes(2);
   });
@@ -113,9 +185,10 @@ describe("Backfill", () => {
     ]);
     mockDetectLevel.mockReturnValue(null);
 
-    await runBackfill({ enabled: true, limitPerSource: 100 });
+    await runBackfill({ enabled: true, limitPerSource: 100 }, onNewPosting);
 
     expect(prisma.posting.upsert).not.toHaveBeenCalled();
+    expect(onNewPosting).not.toHaveBeenCalled();
   });
 
   it("handles adapter errors gracefully", async () => {
@@ -127,6 +200,7 @@ describe("Backfill", () => {
       },
     ]);
 
-    await expect(runBackfill({ enabled: true, limitPerSource: 100 })).resolves.toBeUndefined();
+    await expect(runBackfill({ enabled: true, limitPerSource: 100 }, onNewPosting)).resolves.toBeUndefined();
+    expect(onNewPosting).not.toHaveBeenCalled();
   });
 });

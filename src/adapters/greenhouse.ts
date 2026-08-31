@@ -1,6 +1,6 @@
 import type { SourceAdapter, RawPosting } from "@/lib/types";
 import { adapterConfigs } from "@/config/adapters.config";
-import { fetchJson, AdapterError } from "./base";
+import { fetchJson, collectFromTargets } from "./base";
 
 interface GreenhouseJob {
   id: string;
@@ -24,29 +24,25 @@ export function createGreenhouseAdapter(): SourceAdapter {
     name: "greenhouse",
     pollIntervalSec: config.pollIntervalSec,
     async fetchNewPostings(): Promise<RawPosting[]> {
-      const postings: RawPosting[] = [];
-
-      for (const company of config.companies) {
-        try {
+      return collectFromTargets(
+        "greenhouse",
+        config.companies,
+        async (company) => {
           const data = await fetchJson<GreenhouseResponse>(
             `https://boards-api.greenhouse.io/v1/boards/${company}/jobs?content=Job`
           );
-          for (const job of data.jobs) {
-            postings.push({
-              title: job.title,
-              company: job.company_name,
-              location: job.location?.name ?? null,
-              url: job.absolute_url,
-              externalId: job.id.toString(),
-              publishedAt: job.first_published,
-              raw: job as unknown as Record<string, unknown>,
-            });
-          }
-        } catch (err) {
-          throw new AdapterError("greenhouse", `Failed fetching ${company}`, err as Error);
-        }
-      }
-      return postings;
+          return data.jobs.map((job) => ({
+            title: job.title,
+            company: job.company_name,
+            location: job.location?.name ?? null,
+            url: job.absolute_url,
+            externalId: job.id.toString(),
+            publishedAt: job.first_published,
+            raw: job as unknown as Record<string, unknown>,
+          }));
+        },
+        (company) => company
+      );
     },
   };
 }

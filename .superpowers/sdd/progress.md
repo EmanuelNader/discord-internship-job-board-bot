@@ -4,10 +4,11 @@ Repo: EmanuelNader/discord-internship-job-board-bot
 Spec: docs/superpowers/specs/2026-07-23-discord-internship-job-board-bot-design.md
 
 ## Branches
-- `main` — integration target; merges land here.
-- `plan/01-scaffold` — Plan 1: scaffold + contract + normalize + DB (IN PROGRESS)
-- `plan/02-adapters` — Plan 2: adapters + scheduler + backfill (pending)
-- `plan/03-poster` — Plan 3: poster + commands + provisioning + deploy (pending)
+- `main` — integration target; merges land here. Plans 1–3 merged.
+- `plan/01-scaffold` — Plan 1: scaffold + contract + normalize + DB (**complete / merged**)
+- `plan/02-adapters` — Plan 2: adapters + scheduler + backfill (**complete / merged**)
+- `plan/03-poster` — Plan 3: poster + commands + provisioning (**complete / merged**)
+- `plan/04-deploy` — Plan 4: deploy, ops hardening & smoke (**code + docs complete; manual smoke pending**)
 
 ## Convention
 - One branch per plan. Each plan's tasks are executed subagent-driven on its branch.
@@ -18,21 +19,36 @@ Spec: docs/superpowers/specs/2026-07-23-discord-internship-job-board-bot-design.
 ## Progress
 
 ### Plan 1 — scaffold + contract + normalize + db (branch plan/01-scaffold)
-- Base of plan = e059de6 (docs commit on main)
-- [x] Task 1: Scaffold — BASE: e059de6, HEAD: eeea736 — review clean
-- [x] Task 2: Posting contract types — BASE: eeea736, HEAD: f73078c — review clean
-- [x] Task 3: detectLevel (TDD) — BASE: f73078c, HEAD: 11f0131 — review clean
-- [x] Task 4: detectRoleFamily (TDD) — BASE: 11f0131, HEAD: a3c6222 — review clean
-- [x] Task 5: detectRoleTitles (TDD) — BASE: a3c6222, HEAD: e9820ac — review clean
-- [x] Task 6: dedupHash (TDD) — BASE: e9820ac, HEAD: 8279f20 — review clean
-- [x] Task 7: Prisma schema + SQLite — BASE: 8279f20, HEAD: f007533 — review clean
-- [x] Task 8: Config files — BASE: f007533, HEAD: 9cf549f — review clean
-- [ ] Task 9: Full verification + final whole-branch review + merge plan/01 to main + push — BASE: (pending)
+- Status: **complete / merged to main**
+- [x] Task 1: Scaffold
+- [x] Task 2: Posting contract types
+- [x] Task 3: detectLevel (TDD)
+- [x] Task 4: detectRoleFamily (TDD)
+- [x] Task 5: detectRoleTitles (TDD)
+- [x] Task 6: dedupHash (TDD)
+- [x] Task 7: Prisma schema + SQLite
+- [x] Task 8: Config files
+- [x] Task 9: Full verification + merge to main
 
 ### Plan 2 — adapters + scheduler + backfill (branch plan/02-adapters)
-- Base of plan = (Plan 1 merge commit on main)
-- [ ] Tasks 1-N per plan (pending)
+- Status: **complete / merged to main**
+- [x] All plan tasks complete and merged
 
-### Plan 3 — poster + commands + provisioning + deploy (branch plan/03-poster)
-- Base of plan = (Plan 2 merge commit on main)
-- [ ] Tasks 1-N per plan (pending)
+### Plan 3 — poster + commands + provisioning (branch plan/03-poster)
+- Status: **complete / merged to main**
+- Notes: Handoff at `425acd6`; PM2 / full deploy runbook deferred to Plan 4
+- [x] All plan tasks complete and merged (deploy ops → Plan 4)
+
+### Plan 4 — deploy, ops hardening & smoke (branch plan/04-deploy)
+- Status: **code + docs complete on branch; manual Discord smoke + merge pending**
+- Plan: `docs/superpowers/plans/2026-08-04-04-deploy-ops-smoke.md`
+- Base of plan ≈ `6b57a42` on `main`
+- [x] Task 1: Env bootstrap + validation — `586d661`
+- [x] Task 2: Production build (`tsc-alias`) — `f8a8351`
+- [x] Task 3: Prisma baseline migration + gitignore — `7dd88dd`
+- [x] Task 4: Poster rate-limited queue — `9bcfc04`
+- [x] Task 5: Backfill posts to Discord — `54e4bd9`
+- [x] Task 6: Graceful shutdown — `65a15e3`
+- [x] Task 7: PM2 ecosystem config — `ecosystem.config.cjs` (present on branch)
+- [x] Task 8: Deploy runbook + SDD progress — `docs/DEPLOY.md` + this file
+- [x] Task 9: Full verification + handoff — automated verify + handoff docs done; **manual Discord smoke still operator-owned** (merge to `main` after smoke/review)
