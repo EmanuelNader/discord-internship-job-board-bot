@@ -1,0 +1,14 @@
+services:
+  intern-board:
+    build: .
+    container_name: intern-board
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: "file:../data/prod.db"
+    volumes:
+      - intern-board-data:/app/data
+
+volumes:
+  intern-board-data:

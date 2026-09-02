@@ -1,0 +1,14 @@
+node_modules
+dist
+.git
+.env
+*.db
+*.db-journal
+coverage
+*.log
+.DS_Store
+.superpowers
+docs
+tests
+backups
+data

@@ -10,3 +10,4 @@ prod.db-journal
 *.log
 .DS_Store
 coverage/
+data/
