@@ -1,6 +1,7 @@
 export interface AppEnv {
   DISCORD_TOKEN: string;
   DATABASE_URL: string;
+  /** Optional. Recommended so GitHub README polls are not rate-limited. */
   GITHUB_TOKEN?: string;
   BACKFILL: boolean;
   BACKFILL_LIMIT: number;

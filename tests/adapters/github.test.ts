@@ -86,6 +86,23 @@ describe("GitHub Adapter", () => {
       url: "https://jobs.ashbyhq.com/NorthwoodSpace/abc/application",
     });
     expect(postings[0].externalId).toContain("SimplifyJobs/Summer2027-Internships#README.md");
+    expect(postings[0].publishedAt).toMatch(/T00:00:00\.000Z$/);
+  });
+
+  it("uses calendar posted dates instead of first-seen", async () => {
+    process.env.GITHUB_MAX_AGE_DAYS = "4000";
+    nockContents(
+      "vanshb03/Summer2027-Internships",
+      `| Company | Role | Location | Application/Link | Date Posted |
+| --- | --- | --- | --- | --- |
+| HP IQ | Software Engineer Intern, Cloud Services | San Francisco, CA | <a href="https://example.com/hp-iq"><img src="https://i.imgur.com/u1KNU8z.png"></a> | 8/31/2026 |
+`
+    );
+    nockEmptyTargets(["vanshb03/Summer2027-Internships"]);
+
+    const postings = await adapter.fetchNewPostings();
+    expect(postings).toHaveLength(1);
+    expect(postings[0].publishedAt).toBe("2026-08-31T00:00:00.000Z");
   });
 
   it("parses markdown README listings from other listed repos", async () => {

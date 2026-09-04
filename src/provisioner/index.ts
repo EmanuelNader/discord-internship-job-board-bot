@@ -4,6 +4,7 @@ import { prisma } from "@/db/client";
 
 export async function ensureGuildSetup(client: Client): Promise<void> {
   const guild = client.guilds.cache.first();
+  // Single-guild: extra Discord servers the bot is in are ignored.
   if (!guild) {
     throw new Error(
       "Bot is not in any guild. Invite it with the bot and applications.commands scopes, then restart."
@@ -35,15 +36,23 @@ export async function ensureGuildSetup(client: Client): Promise<void> {
       update: { channelId: channel.id },
     });
 
-    for (const title of family.titles) {
-      let role = existingRoles.find((r) => r?.name === title.roleName);
+    let pingRole = existingRoles.find((r) => r?.name === family.roleName);
+    if (!pingRole) {
+      pingRole = await guild.roles.create({
+        name: family.roleName,
+        mentionable: true,
+        reason: `Auto-provisioned ping role for ${family.family}`,
+      });
+    }
 
-      if (!role) {
-        role = await guild.roles.create({
-          name: title.roleName,
-          mentionable: true,
-          reason: `Auto-provisioned ping role for ${title.title}`,
-        });
+    for (const title of family.titles) {
+      const leftover = existingRoles.find((r) => r?.name === title.roleName);
+      if (leftover && leftover.name !== family.roleName && "delete" in leftover) {
+        try {
+          await leftover.delete("Collapsed title ping roles into family roles");
+        } catch (err) {
+          console.error(`Failed to delete leftover role ${title.roleName}:`, err);
+        }
       }
     }
   }

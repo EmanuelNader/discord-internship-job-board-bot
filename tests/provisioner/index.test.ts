@@ -40,11 +40,10 @@ describe("ensureGuildSetup", () => {
 
     await ensureGuildSetup(mockClient);
 
-    // Should create at least one channel (swe-jobs)
-    expect(mockChannelCreate).toHaveBeenCalled();
-    expect(mockChannelMapUpsert).toHaveBeenCalled();
-    // Should create multiple roles
+    // Should create family ping roles (SWE, PM, ...) not per-title roles
     expect(mockRoleCreate).toHaveBeenCalled();
+    expect(mockRoleCreate).toHaveBeenCalledWith(expect.objectContaining({ name: "SWE" }));
+    expect(mockRoleCreate).not.toHaveBeenCalledWith(expect.objectContaining({ name: "SWE - Frontend" }));
   });
 
   it("skips existing channels and roles", async () => {
@@ -57,7 +56,7 @@ describe("ensureGuildSetup", () => {
       },
       roles: {
         fetch: vi.fn().mockResolvedValue([
-          { name: "SWE - Frontend", id: "existing_role" },
+          { name: "SWE", id: "existing_role" },
         ]),
         create: mockRoleCreate,
       },
@@ -75,6 +74,6 @@ describe("ensureGuildSetup", () => {
 
     // Should NOT create existing channel or role
     expect(mockChannelCreate).not.toHaveBeenCalledWith(expect.objectContaining({ name: "swe-jobs" }));
-    expect(mockRoleCreate).not.toHaveBeenCalledWith(expect.objectContaining({ name: "SWE - Frontend" }));
+    expect(mockRoleCreate).not.toHaveBeenCalledWith(expect.objectContaining({ name: "SWE" }));
   });
 });

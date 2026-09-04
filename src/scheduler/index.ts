@@ -1,6 +1,8 @@
 import type { SourceAdapter, RawPosting } from "@/lib/types";
 import { prisma } from "@/db/client";
 import { detectLevel, detectRoleFamily, detectRoleTitles, dedupHash, contentHash, isUsLocation } from "@/lib/normalize";
+import { isPostedOnOrAfter, startOfUtcDay } from "@/lib/freshness";
+import { resolveAtsPublishedAt } from "@/lib/ats-published-at";
 
 export class SourcesManager {
   private intervals: Map<string, NodeJS.Timeout> = new Map();
@@ -9,7 +11,8 @@ export class SourcesManager {
   constructor(
     private readonly adapters: SourceAdapter[],
     private readonly onNewPosting: (posting: Omit<RawPosting, "location"> & { location: string | null; roleFamily: string[]; roleTitles: string[]; level: string; sourceName: string; postedAt?: Date }, dedupHash: string) => Promise<void>,
-    private readonly onError: (source: string, error: Error) => void
+    private readonly onError: (source: string, error: Error) => void,
+    private readonly liveSince: Date = startOfUtcDay(new Date())
   ) {}
 
   start(): void {
@@ -77,6 +80,7 @@ export class SourcesManager {
         }
 
         const publishedAt = raw.publishedAt ? new Date(raw.publishedAt) : null;
+        const fresh = isPostedOnOrAfter(publishedAt, this.liveSince);
 
         await prisma.posting.upsert({
           where: { dedupHash: hash },
@@ -95,12 +99,21 @@ export class SourcesManager {
             url: raw.url,
             publishedAt,
             raw: raw.raw ? JSON.stringify(raw.raw) : null,
+            postedAt: fresh ? null : new Date(),
           },
           update: {},
         });
 
         const existing = await prisma.posting.findUnique({ where: { dedupHash: hash } });
         if (existing && !existing.postedAt) {
+          if (!isPostedOnOrAfter(existing.publishedAt, this.liveSince)) {
+            await prisma.posting.update({
+              where: { dedupHash: hash },
+              data: { postedAt: new Date() },
+            });
+            continue;
+          }
+          const atsPostedAt = await resolveAtsPublishedAt(raw.url);
           await this.onNewPosting({
             title: raw.title,
             company: raw.company,
@@ -110,7 +123,7 @@ export class SourcesManager {
             roleFamily: roleFamilies,
             roleTitles,
             level,
-            postedAt: existing.publishedAt ?? existing.firstSeenAt,
+            postedAt: atsPostedAt ?? existing.publishedAt ?? undefined,
           }, hash);
           ingested++;
         }

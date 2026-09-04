@@ -7,7 +7,7 @@ const LEVEL_COLORS: Record<string, number> = {
 };
 
 function formatPostedDate(date?: Date): string {
-  if (!date) return "recently";
+  if (!date) return "unknown";
   // Use UTC to avoid timezone issues
   const month = date.toLocaleString("en-US", { month: "short", timeZone: "UTC" });
   const day = date.getUTCDate();

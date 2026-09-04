@@ -10,6 +10,7 @@ import { handleInteraction, handleAutocomplete } from "@/commands/index";
 import { handleOnboardReaction } from "@/commands/onboard-reactions";
 import { ensureGuildSetup } from "@/provisioner/index";
 import { Poster } from "@/poster/index";
+import { ensureLiveSince } from "@/lib/live-since";
 
 const env = validateEnv();
 
@@ -41,6 +42,7 @@ client.once(Events.ClientReady, async () => {
   try {
     console.log(`Logged in as ${client.user?.tag}`);
 
+    // Single-guild: cache.first() is the only server this process will configure or post to.
     await client.guilds.fetch();
     if (client.guilds.cache.size === 0) {
       throw new Error(
@@ -58,12 +60,16 @@ client.once(Events.ClientReady, async () => {
 
     await deployCommands(client);
 
+    const guild = client.guilds.cache.first()!;
+    const liveSince = await ensureLiveSince(guild.id);
+    console.log(`Only posting jobs published on or after ${liveSince.toISOString().slice(0, 10)}`);
+
     poster = new Poster(client, prisma);
 
     if (env.BACKFILL) {
       console.log(`Running backfill (limit ${env.BACKFILL_LIMIT} per source)...`);
       await runBackfill(
-        { enabled: true, limitPerSource: env.BACKFILL_LIMIT },
+        { enabled: true, limitPerSource: env.BACKFILL_LIMIT, liveSince },
         (posting, hash) => poster!.send(posting, hash)
       );
       console.log("Backfill complete");
@@ -72,7 +78,8 @@ client.once(Events.ClientReady, async () => {
     manager = new SourcesManager(
       getAllAdapters(),
       (posting, hash) => poster!.send(posting, hash),
-      (source, error) => console.error(`[${source}] ${error.message}`)
+      (source, error) => console.error(`[${source}] ${error.message}`),
+      liveSince
     );
     manager.start();
     console.log("SourcesManager started");

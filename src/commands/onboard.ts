@@ -42,7 +42,7 @@ export function buildOnboardEmbed(): EmbedBuilder {
       [
         "This bot watches public internship lists and company career pages, keeps **US intern / co-op / fellowship** roles, and posts them into the matching channel below.",
         "",
-        "React with an emoji to get pinged when a new listing lands in that family. Remove the reaction to stop pings. You can also use `/role` / `/unrole` for a more specific title.",
+        "React with an emoji to get pinged when a new listing lands in that family. Remove the reaction to stop pings. You can also use `/role` / `/unrole`.",
       ].join("\n")
     )
     .addFields(

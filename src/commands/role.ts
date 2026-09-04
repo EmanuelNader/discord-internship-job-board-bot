@@ -1,9 +1,10 @@
 import { AutocompleteInteraction, ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
 import { roleFamilies } from "@/config/roles.config";
 
-const allRoleTitles = roleFamilies.flatMap((f) =>
-  f.titles.map((t) => ({ name: t.description, value: t.title }))
-);
+const familyChoices = roleFamilies.map((f) => ({
+  name: f.roleName,
+  value: f.family,
+}));
 
 export const roleCommand = new SlashCommandBuilder()
   .setName("role")
@@ -30,16 +31,16 @@ export const unroleCommand = new SlashCommandBuilder()
 export async function handleRoleAutocomplete(interaction: AutocompleteInteraction): Promise<void> {
   const focused = interaction.options.getFocused(true);
   const query = focused.value.toLowerCase();
-  const choices = allRoleTitles
+  const choices = familyChoices
     .filter((c) => c.name.toLowerCase().includes(query) || c.value.toLowerCase().includes(query))
     .slice(0, 25);
   await interaction.respond(choices);
 }
 
 export async function handleRoleAdd(interaction: ChatInputCommandInteraction): Promise<void> {
-  const roleTitle = interaction.options.getString("role", true);
-  const config = roleFamilies.flatMap((f) => f.titles).find((t) => t.title === roleTitle);
-  if (!config) {
+  const familyId = interaction.options.getString("role", true);
+  const family = roleFamilies.find((f) => f.family === familyId);
+  if (!family) {
     await interaction.reply({ content: "Unknown role.", ephemeral: true });
     return;
   }
@@ -50,7 +51,7 @@ export async function handleRoleAdd(interaction: ChatInputCommandInteraction): P
     return;
   }
 
-  const role = interaction.guild?.roles.cache.find((r) => r.name === config.roleName);
+  const role = interaction.guild?.roles.cache.find((r) => r.name === family.roleName);
   if (!role) {
     await interaction.reply({ content: "Role not found on server. Run /setup first.", ephemeral: true });
     return;
@@ -58,16 +59,16 @@ export async function handleRoleAdd(interaction: ChatInputCommandInteraction): P
 
   try {
     await member.roles.add(role);
-    await interaction.reply({ content: `Assigned ${config.roleName}.`, ephemeral: true });
+    await interaction.reply({ content: `Assigned ${family.roleName}.`, ephemeral: true });
   } catch {
     await interaction.reply({ content: "Failed to assign role. Check permissions.", ephemeral: true });
   }
 }
 
 export async function handleRoleRemove(interaction: ChatInputCommandInteraction): Promise<void> {
-  const roleTitle = interaction.options.getString("role", true);
-  const config = roleFamilies.flatMap((f) => f.titles).find((t) => t.title === roleTitle);
-  if (!config) {
+  const familyId = interaction.options.getString("role", true);
+  const family = roleFamilies.find((f) => f.family === familyId);
+  if (!family) {
     await interaction.reply({ content: "Unknown role.", ephemeral: true });
     return;
   }
@@ -78,7 +79,7 @@ export async function handleRoleRemove(interaction: ChatInputCommandInteraction)
     return;
   }
 
-  const role = interaction.guild?.roles.cache.find((r) => r.name === config.roleName);
+  const role = interaction.guild?.roles.cache.find((r) => r.name === family.roleName);
   if (!role) {
     await interaction.reply({ content: "Role not found on server.", ephemeral: true });
     return;
@@ -86,7 +87,7 @@ export async function handleRoleRemove(interaction: ChatInputCommandInteraction)
 
   try {
     await member.roles.remove(role);
-    await interaction.reply({ content: `Removed ${config.roleName}.`, ephemeral: true });
+    await interaction.reply({ content: `Removed ${family.roleName}.`, ephemeral: true });
   } catch {
     await interaction.reply({ content: "Failed to remove role. Check permissions.", ephemeral: true });
   }

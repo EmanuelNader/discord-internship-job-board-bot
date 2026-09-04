@@ -80,16 +80,13 @@ export class Poster {
 
     if (channels.length === 0) return;
 
-    const guild = this.client.guilds.cache.first();
+    const guild = this.client.guilds.cache.first(); // Single-guild: pings resolve on cache.first() only.
     const pingRoleIds: string[] = [];
-    if (guild && posting.roleTitles.length > 0) {
+    if (guild) {
       for (const family of roleFamilies) {
-        for (const title of family.titles) {
-          if (posting.roleTitles.includes(title.title)) {
-            const role = guild.roles.cache.find((r) => r.name === title.roleName);
-            if (role) pingRoleIds.push(role.id);
-          }
-        }
+        if (!posting.roleFamily.includes(family.family)) continue;
+        const role = guild.roles.cache.find((r) => r.name === family.roleName);
+        if (role) pingRoleIds.push(role.id);
       }
     }
     const roleMentions = pingRoleIds.length > 0 ? pingRoleIds.map((id) => `<@&${id}>`).join(" ") : undefined;

@@ -44,6 +44,22 @@ describe("buildPostingEmbed", () => {
     expect(embed.data.fields![4].value).toBe("Feb 20, 2024");
   });
 
+  it("shows unknown when the listing date is missing", () => {
+    const embed = buildPostingEmbed({
+      title: "Intern",
+      company: "Acme",
+      location: "SF",
+      url: "https://a.com",
+      level: "internship",
+      sourceName: "github",
+      roleFamily: ["swe"],
+      roleTitles: [],
+    });
+
+    const posted = embed.data.fields!.find((f) => f.name === "Posted");
+    expect(posted?.value).toBe("unknown");
+  });
+
   it("assigns color by level", () => {
     const intern = buildPostingEmbed({ title: "I", company: "A", url: "https://a.com", level: "internship", sourceName: "gh", roleFamily: ["swe"], roleTitles: [], location: null, postedAt: new Date() });
     const coop = buildPostingEmbed({ title: "I", company: "A", url: "https://a.com", level: "co-op", sourceName: "gh", roleFamily: ["swe"], roleTitles: [], location: null, postedAt: new Date() });

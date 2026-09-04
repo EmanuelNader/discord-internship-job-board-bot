@@ -14,6 +14,7 @@ const commands = [
 
 export async function deployCommands(client: Client): Promise<void> {
   const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN!);
+  // Single-guild: slash commands are registered only on cache.first(), not globally.
   const guild = client.guilds.cache.first();
   if (!guild) {
     throw new Error(

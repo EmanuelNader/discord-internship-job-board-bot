@@ -64,3 +64,11 @@ model OnboardPanel {
 
   @@index([messageId])
 }
+
+model GuildState {
+  id        Int      @id @default(autoincrement())
+  guildId   String   @unique
+  liveSince DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

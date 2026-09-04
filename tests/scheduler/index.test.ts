@@ -6,12 +6,14 @@ const mockDetectRoleTitles = vi.hoisted(() => vi.fn());
 const mockDedupHash = vi.hoisted(() => vi.fn());
 const mockContentHash = vi.hoisted(() => vi.fn(() => "content-hash-123"));
 const mockIsUsLocation = vi.hoisted(() => vi.fn(() => true));
+const mockResolveAtsPublishedAt = vi.hoisted(() => vi.fn(async () => null));
 
 vi.mock("@/db/client", () => ({
   prisma: {
     posting: {
       upsert: vi.fn(),
       findUnique: vi.fn(),
+      update: vi.fn(),
     },
     source: {
       upsert: vi.fn(),
@@ -28,6 +30,10 @@ vi.mock("@/lib/normalize", () => ({
   isUsLocation: mockIsUsLocation,
 }));
 
+vi.mock("@/lib/ats-published-at", () => ({
+  resolveAtsPublishedAt: mockResolveAtsPublishedAt,
+}));
+
 import { SourcesManager } from "@/scheduler/index";
 import type { SourceAdapter } from "@/lib/types";
 
@@ -40,6 +46,7 @@ describe("SourcesManager", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockResolveAtsPublishedAt.mockResolvedValue(null);
 
     mockAdapter = {
       name: "test",
@@ -92,7 +99,15 @@ describe("SourcesManager", () => {
 
   it("upserts new posting and calls onNewPosting", async () => {
     mockAdapter.fetchNewPostings = vi.fn().mockResolvedValue([
-      { title: "Software Engineer Intern", company: "Acme", location: "SF", url: "https://a.com/1", externalId: "ext1", raw: {} },
+      {
+        title: "Software Engineer Intern",
+        company: "Acme",
+        location: "SF",
+        url: "https://a.com/1",
+        externalId: "ext1",
+        publishedAt: "2026-06-15T10:00:00Z",
+        raw: {},
+      },
     ]);
     mockDetectLevel.mockReturnValue("internship");
     mockDetectRoleFamily.mockReturnValue(["swe"]);
@@ -104,7 +119,12 @@ describe("SourcesManager", () => {
       .mockResolvedValueOnce({ id: 1, dedupHash: "hash123", postedAt: null, publishedAt: new Date("2026-06-15T10:00:00Z"), firstSeenAt: new Date() }); // after upsert
     (prisma.posting.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 1 });
 
-    const manager = new SourcesManager([mockAdapter], onNewPosting, onError);
+    const manager = new SourcesManager(
+      [mockAdapter],
+      onNewPosting,
+      onError,
+      new Date("2026-01-01T00:00:00Z")
+    );
     await manager.runOnce("test");
 
     expect(prisma.posting.upsert).toHaveBeenCalledWith(
@@ -125,6 +145,100 @@ describe("SourcesManager", () => {
         roleTitles: ["swe-frontend"],
         level: "internship",
         postedAt: new Date("2026-06-15T10:00:00Z"),
+      }),
+      "hash123"
+    );
+  });
+
+  it("does not Discord-post jobs published before the onboard day", async () => {
+    mockAdapter.fetchNewPostings = vi.fn().mockResolvedValue([
+      {
+        title: "Electrical Engineer Intern",
+        company: "Neuralink",
+        url: "https://a.com/1",
+        externalId: "ext1",
+        publishedAt: "2026-04-16T00:00:00Z",
+        raw: {},
+      },
+    ]);
+    mockDetectLevel.mockReturnValue("internship");
+    mockDetectRoleFamily.mockReturnValue(["engineering"]);
+    mockDetectRoleTitles.mockReturnValue(["eng-electrical"]);
+    mockDedupHash.mockReturnValue("hash123");
+    mockContentHash.mockReturnValue("content-hash-123");
+    (prisma.posting.findUnique as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({
+        id: 1,
+        dedupHash: "hash123",
+        postedAt: new Date(),
+        publishedAt: new Date("2026-04-16T00:00:00Z"),
+        firstSeenAt: new Date(),
+      });
+    (prisma.posting.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 1 });
+
+    const manager = new SourcesManager(
+      [mockAdapter],
+      onNewPosting,
+      onError,
+      new Date("2026-09-02T18:00:00Z")
+    );
+    await manager.runOnce("test");
+
+    expect(onNewPosting).not.toHaveBeenCalled();
+    expect(prisma.posting.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({
+          postedAt: expect.any(Date),
+        }),
+      })
+    );
+  });
+
+  it("uses the ATS listing date in Discord when GitHub only knows list age", async () => {
+    mockAdapter.name = "github";
+    mockAdapter.fetchNewPostings = vi.fn().mockResolvedValue([
+      {
+        title: "Software Engineer Intern, Cloud Services (Summer 2027)",
+        company: "HP IQ",
+        location: "San Francisco, CA",
+        url: "https://job-boards.greenhouse.io/hpiq/jobs/6111955004",
+        externalId: "ext1",
+        publishedAt: "2026-09-02T07:57:00.000Z",
+        raw: { ageDays: 0 },
+      },
+    ]);
+    mockDetectLevel.mockReturnValue("internship");
+    mockDetectRoleFamily.mockReturnValue(["swe"]);
+    mockDetectRoleTitles.mockReturnValue(["swe-backend"]);
+    mockDedupHash.mockReturnValue("hash123");
+    mockContentHash.mockReturnValue("content-hash-123");
+    mockResolveAtsPublishedAt.mockResolvedValue(new Date("2026-08-31T19:24:19.000Z"));
+    (prisma.posting.findUnique as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({
+        id: 1,
+        dedupHash: "hash123",
+        postedAt: null,
+        publishedAt: new Date("2026-09-02T07:57:00.000Z"),
+        firstSeenAt: new Date("2026-09-02T07:57:00.000Z"),
+      });
+    (prisma.posting.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 1 });
+
+    const manager = new SourcesManager(
+      [mockAdapter],
+      onNewPosting,
+      onError,
+      new Date("2026-09-02T00:00:00Z")
+    );
+    await manager.runOnce("github");
+
+    expect(mockResolveAtsPublishedAt).toHaveBeenCalledWith(
+      "https://job-boards.greenhouse.io/hpiq/jobs/6111955004"
+    );
+    expect(onNewPosting).toHaveBeenCalledWith(
+      expect.objectContaining({
+        postedAt: new Date("2026-08-31T19:24:19.000Z"),
       }),
       "hash123"
     );

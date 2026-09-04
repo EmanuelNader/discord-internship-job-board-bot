@@ -1,4 +1,5 @@
 import * as cheerio from "cheerio";
+import { startOfUtcDay } from "@/lib/freshness";
 
 export interface ParsedListing {
   company: string;
@@ -6,6 +7,7 @@ export interface ParsedListing {
   location: string | null;
   url: string;
   ageDays: number | null;
+  publishedAt: Date | null;
   closed: boolean;
 }
 
@@ -16,31 +18,56 @@ const MONTHS: Record<string, number> = {
   jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11,
 };
 
-export function parsePostedAgeDays(text: string, now = new Date()): number | null {
+function utcDaysAgo(now: Date, days: number): Date {
+  const d = startOfUtcDay(now);
+  d.setUTCDate(d.getUTCDate() - days);
+  return d;
+}
+
+export function parsePostedDate(text: string, now = new Date()): Date | null {
   const t = text.trim();
   if (!t) return null;
 
+  const slash = t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  if (slash) {
+    let year = Number(slash[3]);
+    if (year < 100) year += 2000;
+    const month = Number(slash[1]) - 1;
+    const day = Number(slash[2]);
+    if (month < 0 || month > 11 || day < 1 || day > 31) return null;
+    return new Date(Date.UTC(year, month, day));
+  }
+
+  const iso = t.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return new Date(Date.UTC(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3])));
+
   const dayMatch = t.match(/^(\d+)\s*d\b/i);
-  if (dayMatch) return Number(dayMatch[1]);
+  if (dayMatch) return utcDaysAgo(now, Number(dayMatch[1]));
   const weekMatch = t.match(/^(\d+)\s*w\b/i);
-  if (weekMatch) return Number(weekMatch[1]) * 7;
+  if (weekMatch) return utcDaysAgo(now, Number(weekMatch[1]) * 7);
   const monthMatch = t.match(/^(\d+)\s*mo\b/i);
-  if (monthMatch) return Number(monthMatch[1]) * 30;
+  if (monthMatch) return utcDaysAgo(now, Number(monthMatch[1]) * 30);
 
   const dateMatch = t.match(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+(\d{1,2})(?:,?\s*(\d{4}))?/i);
   if (dateMatch) {
     const month = MONTHS[dateMatch[1].slice(0, 3).toLowerCase()];
     const day = Number(dateMatch[2]);
-    let year = dateMatch[3] ? Number(dateMatch[3]) : now.getUTCFullYear();
+    const year = dateMatch[3] ? Number(dateMatch[3]) : now.getUTCFullYear();
     const parsed = new Date(Date.UTC(year, month, day));
     if (!dateMatch[3] && parsed.getTime() > now.getTime()) {
       parsed.setUTCFullYear(year - 1);
     }
-    const diff = Math.floor((now.getTime() - parsed.getTime()) / 86400000);
-    return diff < 0 ? 0 : diff;
+    return parsed;
   }
 
   return null;
+}
+
+export function parsePostedAgeDays(text: string, now = new Date()): number | null {
+  const posted = parsePostedDate(text, now);
+  if (!posted) return null;
+  const diff = Math.floor((startOfUtcDay(now).getTime() - posted.getTime()) / 86400000);
+  return diff < 0 ? 0 : diff;
 }
 
 function isSkippableHref(href: string): boolean {
@@ -104,6 +131,7 @@ function mapRow(
 
   const locationRaw = locIdx >= 0 ? cleanCellText(cells[locIdx] ?? "") : "";
   const ageText = ageIdx >= 0 ? cleanCellText(cells[ageIdx] ?? "") : "";
+  const publishedAt = parsePostedDate(ageText);
 
   return {
     company,
@@ -111,6 +139,7 @@ function mapRow(
     location: locationRaw || null,
     url,
     ageDays: parsePostedAgeDays(ageText),
+    publishedAt,
     closed,
   };
 }

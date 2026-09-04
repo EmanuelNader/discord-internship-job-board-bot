@@ -36,6 +36,7 @@ describe("validateEnv", () => {
     expect(env.BACKFILL).toBe(false);
     expect(env.BACKFILL_LIMIT).toBe(50);
     expect(env.GITHUB_MAX_AGE_DAYS).toBe(14);
+    expect(env.GITHUB_TOKEN).toBeUndefined();
   });
 
   it("throws when GITHUB_MAX_AGE_DAYS is not a positive number", () => {

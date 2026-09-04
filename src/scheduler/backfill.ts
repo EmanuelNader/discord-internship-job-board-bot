@@ -1,10 +1,13 @@
 import { prisma } from "@/db/client";
 import { getAllAdapters } from "@/adapters";
 import { detectLevel, detectRoleFamily, detectRoleTitles, dedupHash, contentHash, isUsLocation } from "@/lib/normalize";
+import { isPostedOnOrAfter, startOfUtcDay } from "@/lib/freshness";
+import { resolveAtsPublishedAt } from "@/lib/ats-published-at";
 
 export interface BackfillOptions {
   limitPerSource: number;
   enabled: boolean;
+  liveSince?: Date;
 }
 
 export type BackfillOnNewPosting = (
@@ -29,6 +32,7 @@ export async function runBackfill(
   if (!options.enabled) return;
 
   const adapters = getAllAdapters();
+  const liveSince = options.liveSince ?? startOfUtcDay(new Date());
 
   for (const adapter of adapters) {
     try {
@@ -53,6 +57,7 @@ export async function runBackfill(
         if (existingByContent) continue;
 
         const publishedAt = raw.publishedAt ? new Date(raw.publishedAt) : null;
+        const fresh = isPostedOnOrAfter(publishedAt, liveSince);
 
         await prisma.posting.upsert({
           where: { dedupHash: hash },
@@ -71,13 +76,21 @@ export async function runBackfill(
             url: raw.url,
             publishedAt,
             raw: raw.raw ? JSON.stringify(raw.raw) : null,
-            postedAt: null,
+            postedAt: fresh ? null : new Date(),
           },
           update: {},
         });
 
         const existing = await prisma.posting.findUnique({ where: { dedupHash: hash } });
         if (existing && !existing.postedAt) {
+          if (!isPostedOnOrAfter(existing.publishedAt, liveSince)) {
+            await prisma.posting.update({
+              where: { dedupHash: hash },
+              data: { postedAt: new Date() },
+            });
+            continue;
+          }
+          const atsPostedAt = await resolveAtsPublishedAt(raw.url);
           await onNewPosting({
             title: raw.title,
             company: raw.company,
@@ -87,7 +100,7 @@ export async function runBackfill(
             roleFamily: roleFamilies,
             roleTitles,
             level,
-            postedAt: existing.publishedAt ?? existing.firstSeenAt,
+            postedAt: atsPostedAt ?? existing.publishedAt ?? undefined,
           }, hash);
         }
       }

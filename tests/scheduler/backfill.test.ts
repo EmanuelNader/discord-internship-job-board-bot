@@ -13,6 +13,7 @@ vi.mock("@/db/client", () => ({
     posting: {
       upsert: vi.fn(),
       findUnique: vi.fn(),
+      update: vi.fn(),
     },
     source: {
       upsert: vi.fn(),
@@ -72,7 +73,10 @@ describe("Backfill", () => {
       .mockResolvedValueOnce({ id: 1, dedupHash: "hash123", postedAt: null, publishedAt, firstSeenAt });
     (prisma.posting.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 1 });
 
-    await runBackfill({ enabled: true, limitPerSource: 100 }, onNewPosting);
+    await runBackfill(
+      { enabled: true, limitPerSource: 100, liveSince: new Date("2026-01-01T00:00:00Z") },
+      onNewPosting
+    );
 
     expect(prisma.posting.upsert).toHaveBeenCalledWith(
       expect.objectContaining({

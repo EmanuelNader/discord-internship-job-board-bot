@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseInternshipListings, parsePostedAgeDays } from "@/adapters/github-readme";
+import { parseInternshipListings, parsePostedAgeDays, parsePostedDate } from "@/adapters/github-readme";
 
 const SIMPLIFY_HTML = `
 <table>
@@ -73,8 +73,26 @@ describe("parsePostedAgeDays", () => {
     expect(parsePostedAgeDays("Dec 1", new Date("2026-01-05T12:00:00Z"))).toBe(35);
   });
 
+  it("parses numeric US dates as calendar days before now", () => {
+    const later = new Date("2026-09-02T07:57:00Z");
+    expect(parsePostedAgeDays("8/31/2026", later)).toBe(2);
+    expect(parsePostedAgeDays("08/31/26", later)).toBe(2);
+  });
+
   it("returns null when unparseable", () => {
     expect(parsePostedAgeDays("yesterday", now)).toBeNull();
+  });
+});
+
+describe("parsePostedDate", () => {
+  const now = new Date("2026-09-02T07:57:00Z");
+
+  it("returns UTC midnight for numeric, ISO, and relative ages", () => {
+    expect(parsePostedDate("8/31/2026", now)?.toISOString()).toBe("2026-08-31T00:00:00.000Z");
+    expect(parsePostedDate("2026-08-31", now)?.toISOString()).toBe("2026-08-31T00:00:00.000Z");
+    expect(parsePostedDate("2d", now)?.toISOString()).toBe("2026-08-31T00:00:00.000Z");
+    expect(parsePostedDate("0d", now)?.toISOString()).toBe("2026-09-02T00:00:00.000Z");
+    expect(parsePostedDate("Aug 31, 2026", now)?.toISOString()).toBe("2026-08-31T00:00:00.000Z");
   });
 });
 

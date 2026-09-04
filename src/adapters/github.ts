@@ -53,10 +53,7 @@ export function createGithubAdapter(): SourceAdapter {
               location: row.location,
               url: row.url,
               externalId: `${repo}#${path}#${row.url}`,
-              publishedAt:
-                row.ageDays != null
-                  ? new Date(Date.now() - row.ageDays * 86400000).toISOString()
-                  : undefined,
+              publishedAt: row.publishedAt?.toISOString(),
               raw: { repo, path, ageDays: row.ageDays },
             }));
         },

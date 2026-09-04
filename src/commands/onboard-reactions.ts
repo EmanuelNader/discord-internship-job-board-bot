@@ -40,14 +40,12 @@ export async function handleOnboardReaction(
     // use cache if fetch fails
   }
 
-  for (const title of family.titles) {
-    const role = guild.roles.cache.find((r) => r.name === title.roleName);
-    if (!role) continue;
-    try {
-      if (add) await member.roles.add(role);
-      else await member.roles.remove(role);
-    } catch (err) {
-      console.error(`Failed to ${add ? "add" : "remove"} ${title.roleName} for ${user.id}:`, err);
-    }
+  const role = guild.roles.cache.find((r) => r.name === family.roleName);
+  if (!role) return;
+  try {
+    if (add) await member.roles.add(role);
+    else await member.roles.remove(role);
+  } catch (err) {
+    console.error(`Failed to ${add ? "add" : "remove"} ${family.roleName} for ${user.id}:`, err);
   }
 }

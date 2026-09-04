@@ -74,11 +74,10 @@ describe("handleOnboardReaction", () => {
     expect(familyForEmoji("nope")).toBeUndefined();
   });
 
-  it("assigns every ping role in the family on react", async () => {
+  it("assigns the family ping role on react", async () => {
     mockOnboardFindUnique.mockResolvedValue({ messageId: "msg_1" });
     const add = vi.fn();
-    const frontend = { name: "SWE - Frontend" };
-    const backend = { name: "SWE - Backend" };
+    const swe = { name: "SWE" };
     const reaction = {
       partial: false,
       emoji: { name: "💻" },
@@ -87,7 +86,7 @@ describe("handleOnboardReaction", () => {
         guild: {
           members: { fetch: vi.fn().mockResolvedValue({ roles: { add, remove: vi.fn() } }) },
           roles: {
-            cache: { find: (fn: (r: { name: string }) => boolean) => [frontend, backend].find(fn) },
+            cache: { find: (fn: (r: { name: string }) => boolean) => [swe].find(fn) },
             fetch: vi.fn().mockResolvedValue(undefined),
           },
         },
@@ -95,8 +94,7 @@ describe("handleOnboardReaction", () => {
     } as any;
 
     await handleOnboardReaction(reaction, { bot: false, id: "user_1" } as any, true);
-    expect(add).toHaveBeenCalledWith(frontend);
-    expect(add).toHaveBeenCalledWith(backend);
+    expect(add).toHaveBeenCalledWith(swe);
   });
 
   it("ignores reactions on other messages", async () => {

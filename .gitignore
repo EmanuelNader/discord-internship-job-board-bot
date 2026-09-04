@@ -11,3 +11,5 @@ prod.db-journal
 .DS_Store
 coverage/
 data/
+.superpowers/
+docs/superpowers/

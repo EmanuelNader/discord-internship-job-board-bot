@@ -1,5 +1,11 @@
 import type { SourceName } from "@/lib/types";
 
+/**
+ * Default boards this bot polls. Not secrets — self-hosters should edit this file.
+ * Greenhouse/Ashby/Lever: public job-board slugs. Workday: slug plus matching workdayBoards.
+ * GitHub: owner/repo or owner/repo#path.md intern-list READMEs.
+ */
+
 export interface WorkdayBoard {
   name: string;
   host: string;
