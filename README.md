@@ -60,11 +60,19 @@ npm run dev
 
 ## What it scrapes
 
-Only **US intern / co-op / fellowship** rows are posted. The lists below are the **default** boards in [`src/config/adapters.config.ts`](src/config/adapters.config.ts) — edit that file to add or drop sources.
+Only **US intern / co-op / fellowship** rows are posted. Defaults live in [`src/config/adapters.config.ts`](src/config/adapters.config.ts).
+
+| Source | What | On |
+| --- | --- | --- |
+| GitHub intern lists | README tables (many companies beyond the ATS boards) | yes |
+| Greenhouse | Company career boards | yes (55) |
+| Ashby | Company career boards | yes (51) |
+| Lever | Company career boards | yes (4) |
+| Workday | Company career boards | yes (15) |
+| Simplify HTML | Job-board HTML scrape | no |
+| Custom ATS | Amazon, Microsoft, Meta, Apple, Google, Netflix, Oracle, LinkedIn, ByteDance | no (stub) |
 
 ### GitHub intern lists
-
-Polled as tables in these READMEs (many companies, not only the ATS boards below):
 
 | Repo | Files |
 | --- | --- |
@@ -72,17 +80,67 @@ Polled as tables in these READMEs (many companies, not only the ATS boards below
 | [vanshb03/Summer2027-Internships](https://github.com/vanshb03/Summer2027-Internships) | `README.md` |
 | [speedyapply/2027-SWE-College-Jobs](https://github.com/speedyapply/2027-SWE-College-Jobs) | `README.md` |
 
-### Company career boards (direct ATS)
+### Greenhouse
 
-**Greenhouse:** SpaceX, Anduril, Airtable, Airbnb, Figma, Twitch, Neuralink, Robinhood, xAI, Anthropic, Reddit, Cloudflare, Scale AI, Lyft, Stripe, Discord, Brex, Squarespace, CLEAR, Affirm, Crunchyroll, Nuro, Pallet, Pinterest, Astranis, Waymo, Figure, Merge, Databricks, Datadog, Dropbox, Instacart, MongoDB, Twilio, Block, GitLab, Vercel, Together AI, Hightouch, Roblox, Jump Trading, Akuna Capital, Optiver, IMC, Chicago Trading, Coinbase, Asana, Okta, HubSpot, Flexport, Chime, SoFi, Rocket Lab, Relativity Space, Lucid Motors
+| | | |
+| :--- | :--- | :--- |
+| Affirm | Airbnb | Airtable |
+| Akuna Capital | Anduril | Anthropic |
+| Asana | Astranis | Block |
+| Brex | Chicago Trading | Chime |
+| CLEAR | Cloudflare | Coinbase |
+| Crunchyroll | Databricks | Datadog |
+| Discord | Dropbox | Figma |
+| Figure | Flexport | GitLab |
+| Hightouch | HubSpot | IMC |
+| Instacart | Jump Trading | Lucid Motors |
+| Lyft | Merge | MongoDB |
+| Neuralink | Nuro | Okta |
+| Optiver | Pallet | Pinterest |
+| Reddit | Relativity Space | Robinhood |
+| Roblox | Rocket Lab | Scale AI |
+| SoFi | SpaceX | Squarespace |
+| Stripe | Together AI | Twilio |
+| Twitch | Vercel | Waymo |
+| xAI | | |
 
-**Ashby:** Chalk, Notion, Ramp, Snowflake, Decagon, Distyl, ElevenLabs, Baseten, Browserbase, ClickUp, Apex, Light, Linear, Sift, GigaML, Sesame, Granola, Sunday, OpenAI, Perplexity, Pylon, Cohere, Traversal, Harvey, Sentry, Braintrust, EliseAI, Mintlify, Roadrunner, Supabase, Wispr Flow, Flint, Cursor, LangChain, Cognition, Paraform, Saronic, Plaid, Exa, Trajectory, Krea, Vizcom, PostHog, Sierra, Workweave, Reducto, Console, Salient, Replit, Vanta, Mercury
+### Ashby
 
-**Lever:** Palantir, Spotify, Zoox, Belvedere Trading
+| | | |
+| :--- | :--- | :--- |
+| Apex | Baseten | Braintrust |
+| Browserbase | Chalk | ClickUp |
+| Cognition | Cohere | Console |
+| Cursor | Decagon | Distyl |
+| ElevenLabs | EliseAI | Exa |
+| Flint | GigaML | Granola |
+| Harvey | Krea | LangChain |
+| Light | Linear | Mercury |
+| Mintlify | Notion | OpenAI |
+| Paraform | Perplexity | Plaid |
+| PostHog | Pylon | Ramp |
+| Reducto | Replit | Roadrunner |
+| Salient | Saronic | Sentry |
+| Sesame | Sierra | Sift |
+| Snowflake | Sunday | Supabase |
+| Trajectory | Traversal | Vanta |
+| Vizcom | Wispr Flow | Workweave |
 
-**Workday:** NVIDIA, Adobe, Salesforce, PayPal, Blue Origin, Disney, Slack, 3M, Abbott, Caterpillar, Qualcomm, Applied Materials, RTX, DuPont, Chevron
+### Lever
 
-**Off:** Simplify HTML scrape and custom/proprietary ATS (Amazon, Microsoft, Meta, Apple, Google, Netflix, Oracle, LinkedIn, ByteDance) — adapters exist or are stubbed but not enabled.
+| | | | |
+| :--- | :--- | :--- | :--- |
+| Belvedere Trading | Palantir | Spotify | Zoox |
+
+### Workday
+
+| | | |
+| :--- | :--- | :--- |
+| 3M | Abbott | Adobe |
+| Applied Materials | Blue Origin | Caterpillar |
+| Chevron | Disney | DuPont |
+| NVIDIA | PayPal | Qualcomm |
+| RTX | Salesforce | Slack |
 
 ## Config
 
