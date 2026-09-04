@@ -58,9 +58,35 @@ npm run dev
 | `/ping` | Anyone | Liveness |
 | `/setup` `/linkchannel` | Admin | Repair provisioning / remap a channel |
 
+## What it scrapes
+
+Only **US intern / co-op / fellowship** rows are posted. The lists below are the **default** boards in [`src/config/adapters.config.ts`](src/config/adapters.config.ts) — edit that file to add or drop sources.
+
+### GitHub intern lists
+
+Polled as tables in these READMEs (many companies, not only the ATS boards below):
+
+| Repo | Files |
+| --- | --- |
+| [SimplifyJobs/Summer2027-Internships](https://github.com/SimplifyJobs/Summer2027-Internships) | `README.md`, `README-Off-Season.md` |
+| [vanshb03/Summer2027-Internships](https://github.com/vanshb03/Summer2027-Internships) | `README.md` |
+| [speedyapply/2027-SWE-College-Jobs](https://github.com/speedyapply/2027-SWE-College-Jobs) | `README.md` |
+
+### Company career boards (direct ATS)
+
+**Greenhouse:** SpaceX, Anduril, Airtable, Airbnb, Figma, Twitch, Neuralink, Robinhood, xAI, Anthropic, Reddit, Cloudflare, Scale AI, Lyft, Stripe, Discord, Brex, Squarespace, CLEAR, Affirm, Crunchyroll, Nuro, Pallet, Pinterest, Astranis, Waymo, Figure, Merge, Databricks, Datadog, Dropbox, Instacart, MongoDB, Twilio, Block, GitLab, Vercel, Together AI, Hightouch, Roblox, Jump Trading, Akuna Capital, Optiver, IMC, Chicago Trading, Coinbase, Asana, Okta, HubSpot, Flexport, Chime, SoFi, Rocket Lab, Relativity Space, Lucid Motors
+
+**Ashby:** Chalk, Notion, Ramp, Snowflake, Decagon, Distyl, ElevenLabs, Baseten, Browserbase, ClickUp, Apex, Light, Linear, Sift, GigaML, Sesame, Granola, Sunday, OpenAI, Perplexity, Pylon, Cohere, Traversal, Harvey, Sentry, Braintrust, EliseAI, Mintlify, Roadrunner, Supabase, Wispr Flow, Flint, Cursor, LangChain, Cognition, Paraform, Saronic, Plaid, Exa, Trajectory, Krea, Vizcom, PostHog, Sierra, Workweave, Reducto, Console, Salient, Replit, Vanta, Mercury
+
+**Lever:** Palantir, Spotify, Zoox, Belvedere Trading
+
+**Workday:** NVIDIA, Adobe, Salesforce, PayPal, Blue Origin, Disney, Slack, 3M, Abbott, Caterpillar, Qualcomm, Applied Materials, RTX, DuPont, Chevron
+
+**Off:** Simplify HTML scrape and custom/proprietary ATS (Amazon, Microsoft, Meta, Apple, Google, Netflix, Oracle, LinkedIn, ByteDance) — adapters exist or are stubbed but not enabled.
+
 ## Config
 
-- Board list: `src/config/adapters.config.ts` (Greenhouse, Ashby, Lever, Workday, GitHub intern READMEs)
+- Board list: `src/config/adapters.config.ts`
 - Channels and ping roles: `src/config/roles.config.ts`
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) to add a company. Report vulnerabilities via [SECURITY.md](SECURITY.md) — never paste tokens in issues.
