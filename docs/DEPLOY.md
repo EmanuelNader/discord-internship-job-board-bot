@@ -38,6 +38,7 @@ GITHUB_TOKEN=your_github_pat
 BACKFILL=true
 BACKFILL_LIMIT=50
 GITHUB_MAX_AGE_DAYS=14
+INITIAL_LOOKBACK_DAYS=7
 ```
 
 Compose overrides `DATABASE_URL` to a Docker volume (`/app/data/prod.db`). Do not point it at your laptop’s `prisma/dev.db`.

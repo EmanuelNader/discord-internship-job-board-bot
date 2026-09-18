@@ -25,14 +25,22 @@ describe("ensureLiveSince", () => {
     expect(mockCreate).not.toHaveBeenCalled();
   });
 
-  it("persists UTC midnight of first boot", async () => {
+  it("persists UTC midnight seven days before first join", async () => {
     mockFindUnique.mockResolvedValue(null);
     mockCreate.mockResolvedValue({});
 
-    const liveSince = await ensureLiveSince("g1", new Date("2026-09-02T18:41:00Z"));
-    expect(liveSince.toISOString()).toBe("2026-09-02T00:00:00.000Z");
+    const liveSince = await ensureLiveSince("g1", new Date("2026-09-17T18:41:00Z"));
+    expect(liveSince.toISOString()).toBe("2026-09-10T00:00:00.000Z");
     expect(mockCreate).toHaveBeenCalledWith({
-      data: { guildId: "g1", liveSince: new Date("2026-09-02T00:00:00Z") },
+      data: { guildId: "g1", liveSince: new Date("2026-09-10T00:00:00Z") },
     });
+  });
+
+  it("can disable lookback", async () => {
+    mockFindUnique.mockResolvedValue(null);
+    mockCreate.mockResolvedValue({});
+
+    const liveSince = await ensureLiveSince("g1", new Date("2026-09-17T18:41:00Z"), 0);
+    expect(liveSince.toISOString()).toBe("2026-09-17T00:00:00.000Z");
   });
 });

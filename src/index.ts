@@ -61,7 +61,7 @@ client.once(Events.ClientReady, async () => {
     await deployCommands(client);
 
     const guild = client.guilds.cache.first()!;
-    const liveSince = await ensureLiveSince(guild.id);
+    const liveSince = await ensureLiveSince(guild.id, new Date(), env.INITIAL_LOOKBACK_DAYS);
     console.log(`Only posting jobs published on or after ${liveSince.toISOString().slice(0, 10)}`);
 
     poster = new Poster(client, prisma);

@@ -34,7 +34,9 @@ docker compose up -d --build
 
 Invite the bot **before** the first start. In a server text channel, run **`/onboard`** (Administrator). That creates the job channels and ping roles if missing, posts the welcome embed, and adds family emoji reactions.
 
-Use `BACKFILL=true` only on first boot if you want a seed of recent listings, then set it back to `false` and restart. Compose stores SQLite in the `intern-board-data` volume — do not point `DATABASE_URL` at your laptop `prisma/dev.db`.
+On first join the bot posts US intern listings from the **last 7 days** (rate-limited ~1 / 2s), then only newer ones after that. Set `INITIAL_LOOKBACK_DAYS=0` to start from today only.
+
+Use `BACKFILL=true` only if you want an extra first-boot seed pass, then set it back to `false` and restart. Compose stores SQLite in the `intern-board-data` volume — do not point `DATABASE_URL` at your laptop `prisma/dev.db`.
 
 ## Local development
 

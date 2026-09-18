@@ -1,10 +1,18 @@
 import { describe, it, expect } from "vitest";
-import { isPostedOnOrAfter, startOfUtcDay } from "@/lib/freshness";
+import { isPostedOnOrAfter, startOfUtcDay, utcDaysAgo } from "@/lib/freshness";
 
 describe("startOfUtcDay", () => {
   it("strips time to UTC midnight", () => {
     expect(startOfUtcDay(new Date("2026-09-02T18:41:00Z")).toISOString()).toBe(
       "2026-09-02T00:00:00.000Z"
+    );
+  });
+});
+
+describe("utcDaysAgo", () => {
+  it("moves back whole UTC days", () => {
+    expect(utcDaysAgo(new Date("2026-09-17T18:41:00Z"), 7).toISOString()).toBe(
+      "2026-09-10T00:00:00.000Z"
     );
   });
 });

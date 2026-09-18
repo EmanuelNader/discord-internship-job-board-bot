@@ -1,11 +1,17 @@
 import { prisma } from "@/db/client";
-import { startOfUtcDay } from "@/lib/freshness";
+import { utcDaysAgo } from "@/lib/freshness";
 
-export async function ensureLiveSince(guildId: string, now = new Date()): Promise<Date> {
+const DEFAULT_LOOKBACK_DAYS = 7;
+
+export async function ensureLiveSince(
+  guildId: string,
+  now = new Date(),
+  lookbackDays = DEFAULT_LOOKBACK_DAYS
+): Promise<Date> {
   const existing = await prisma.guildState.findUnique({ where: { guildId } });
   if (existing) return existing.liveSince;
 
-  const liveSince = startOfUtcDay(now);
+  const liveSince = utcDaysAgo(now, lookbackDays);
   await prisma.guildState.create({
     data: { guildId, liveSince },
   });

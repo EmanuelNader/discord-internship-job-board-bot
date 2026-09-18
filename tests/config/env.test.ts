@@ -37,6 +37,14 @@ describe("validateEnv", () => {
     expect(env.BACKFILL_LIMIT).toBe(50);
     expect(env.GITHUB_MAX_AGE_DAYS).toBe(14);
     expect(env.GITHUB_TOKEN).toBeUndefined();
+    expect(env.INITIAL_LOOKBACK_DAYS).toBe(7);
+  });
+
+  it("throws when INITIAL_LOOKBACK_DAYS is negative", () => {
+    process.env.DISCORD_TOKEN = "tok";
+    process.env.DATABASE_URL = "file:./dev.db";
+    process.env.INITIAL_LOOKBACK_DAYS = "-1";
+    expect(() => validateEnv()).toThrow(/INITIAL_LOOKBACK_DAYS/);
   });
 
   it("throws when GITHUB_MAX_AGE_DAYS is not a positive number", () => {
