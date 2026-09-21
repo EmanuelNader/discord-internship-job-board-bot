@@ -61,7 +61,11 @@ export async function handleOnboard(interaction: ChatInputCommandInteraction): P
   }
 
   try {
-    await ensureGuildSetup(interaction.client);
+    if (!interaction.guild) {
+      await interaction.editReply({ content: "Run /onboard in a server text channel." });
+      return;
+    }
+    await ensureGuildSetup(interaction.guild);
 
     const embed = buildOnboardEmbed();
     const textChannel = channel as TextChannel;

@@ -1,16 +1,8 @@
-import { Client } from "discord.js";
+import { Guild } from "discord.js";
 import { getEnabledRoleFamilies } from "@/config/roles.config";
 import { prisma } from "@/db/client";
 
-export async function ensureGuildSetup(client: Client): Promise<void> {
-  const guild = client.guilds.cache.first();
-  // Single-guild: extra Discord servers the bot is in are ignored.
-  if (!guild) {
-    throw new Error(
-      "Bot is not in any guild. Invite it with the bot and applications.commands scopes, then restart."
-    );
-  }
-
+export async function ensureGuildSetup(guild: Guild): Promise<void> {
   const existingChannels = await guild.channels.fetch();
   const existingRoles = await guild.roles.fetch();
 

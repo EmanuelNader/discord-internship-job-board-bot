@@ -49,6 +49,7 @@ describe("handleOnboard", () => {
       deferReply: vi.fn().mockResolvedValue(undefined),
       editReply,
       guildId: "guild_1",
+      guild: { id: "guild_1" },
       client: {},
       channel: {
         isTextBased: () => true,
@@ -60,7 +61,7 @@ describe("handleOnboard", () => {
 
     await handleOnboard(interaction);
 
-    expect(mockEnsureGuildSetup).toHaveBeenCalled();
+    expect(mockEnsureGuildSetup).toHaveBeenCalledWith(interaction.guild);
     expect(send).toHaveBeenCalled();
     expect(react).toHaveBeenCalled();
     expect(mockOnboardUpsert).toHaveBeenCalledWith(

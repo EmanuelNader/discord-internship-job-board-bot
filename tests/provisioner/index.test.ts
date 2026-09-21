@@ -27,18 +27,10 @@ describe("ensureGuildSetup", () => {
       roles: { fetch: mockRolesFetch, create: mockRoleCreate },
     };
 
-    const mockClient = {
-      guilds: {
-        cache: {
-          first: () => mockGuild,
-        },
-      },
-    } as any;
-
     mockChannelCreate.mockResolvedValue({ id: "chan_1" });
     mockRoleCreate.mockResolvedValue({ id: "role_1" });
 
-    await ensureGuildSetup(mockClient);
+    await ensureGuildSetup(mockGuild as any);
 
     // Should create family ping roles (SWE, PM, ...) not per-title roles
     expect(mockRoleCreate).toHaveBeenCalled();
@@ -70,15 +62,7 @@ describe("ensureGuildSetup", () => {
       },
     };
 
-    const mockClient = {
-      guilds: {
-        cache: {
-          first: () => mockGuild,
-        },
-      },
-    } as any;
-
-    await ensureGuildSetup(mockClient);
+    await ensureGuildSetup(mockGuild as any);
 
     // Should NOT create existing channel or role
     expect(mockChannelCreate).not.toHaveBeenCalledWith(expect.objectContaining({ name: "swe-jobs" }));

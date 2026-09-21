@@ -9,7 +9,11 @@ export const setupCommand = new SlashCommandBuilder()
 export async function handleSetup(interaction: ChatInputCommandInteraction): Promise<void> {
   await interaction.deferReply({ ephemeral: true });
   try {
-    await ensureGuildSetup(interaction.client);
+    if (!interaction.guild) {
+      await interaction.editReply({ content: "Run /setup in a server." });
+      return;
+    }
+    await ensureGuildSetup(interaction.guild);
     await interaction.editReply({ content: "Setup complete. Channels, roles, and channel map are ready." });
   } catch (err) {
     await interaction.editReply({ content: `Setup failed: ${(err as Error).message}` });

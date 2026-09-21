@@ -4,7 +4,7 @@ Self-hosted Discord bot that watches public intern lists and company career page
 
 This is **not** a public bot you invite from a directory. Clone the repo, create your own Discord application, and run it on a machine that stays on.
 
-It only uses the **first Discord server** the bot is in. If you add it to a second guild, that guild is ignored.
+It posts into the Discord server where you run `/setup`. Slash commands are registered on every server the bot is in.
 
 ## What you need
 

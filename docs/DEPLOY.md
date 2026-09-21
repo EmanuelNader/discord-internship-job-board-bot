@@ -135,6 +135,6 @@ pm2 logs intern-board
 
 - Keep **separate Discord applications** (and tokens) for production vs local/dev.
 - If a token leaks, rotate it in the Discord Developer Portal and update `.env` + restart.
-- This process only configures the first guild the bot is in.
+- This process posts to the server where you last ran `/setup`. Slash commands register on every guild the bot is in.
 - PM2 SQLite backup (non-Docker): `mkdir -p backups && cp prisma/prod.db "backups/prod-$(date +%Y%m%d-%H%M%S).db"`.
 - PM2 updates: `git pull && npm ci && npx prisma migrate deploy && npm run build && pm2 restart intern-board`. After a pull that changes channels or ping families, run **`/setup`** then **`/onboard`**. Leftover `#engineering-jobs` / `#design-jobs` / `#growth-jobs` can be deleted in Discord.

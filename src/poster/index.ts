@@ -83,17 +83,6 @@ export class Poster {
 
     if (channels.length === 0) return;
 
-    const guild = this.client.guilds.cache.first(); // Single-guild: pings resolve on cache.first() only.
-    const pingRoleIds: string[] = [];
-    if (guild) {
-      for (const family of getEnabledRoleFamilies()) {
-        if (!roleFamilies.includes(family.family)) continue;
-        const role = guild.roles.cache.find((r) => r.name === family.roleName);
-        if (role) pingRoleIds.push(role.id);
-      }
-    }
-    const roleMentions = pingRoleIds.length > 0 ? pingRoleIds.map((id) => `<@&${id}>`).join(" ") : undefined;
-
     const embed = buildPostingEmbed(posting);
     const sentChannelIds: string[] = [];
 
@@ -106,6 +95,16 @@ export class Poster {
           channel = fetched as TextChannel;
           this.channelCache.set(ch.channelId, channel);
         }
+        const guild = channel.guild;
+        const pingRoleIds: string[] = [];
+        if (guild) {
+          for (const family of getEnabledRoleFamilies()) {
+            if (!roleFamilies.includes(family.family)) continue;
+            const role = guild.roles.cache.find((r) => r.name === family.roleName);
+            if (role) pingRoleIds.push(role.id);
+          }
+        }
+        const roleMentions = pingRoleIds.length > 0 ? pingRoleIds.map((id) => `<@&${id}>`).join(" ") : undefined;
         await channel.send({
           content: roleMentions,
           embeds: [embed],
