@@ -8,7 +8,6 @@ import { runBackfill } from "@/scheduler/backfill";
 import { deployCommands } from "@/commands/deploy";
 import { handleInteraction, handleAutocomplete } from "@/commands/index";
 import { handleOnboardReaction } from "@/commands/onboard-reactions";
-import { ensureGuildSetup } from "@/provisioner/index";
 import { Poster } from "@/poster/index";
 import { ensureLiveSince } from "@/lib/live-since";
 
@@ -56,8 +55,7 @@ client.once(Events.ClientReady, async () => {
       );
     }
 
-    await ensureGuildSetup(client);
-
+    // Channels/roles are created only by /setup or /onboard, not on join or boot.
     await deployCommands(client);
 
     const guild = client.guilds.cache.first()!;

@@ -59,9 +59,9 @@ git pull
 docker compose up -d --build
 ```
 
-If the pull changes channels or ping families, an admin must run **`/setup`** then **`/onboard`**. `/setup` creates new channels and ping roles; it does **not** delete leftover `#engineering-jobs` or `@Engineering` — remove those in Discord if you no longer want them. Re-run `/onboard` so the reaction panel lists the new emojis, then drag the **job board** role above the new ping roles.
+If the pull changes channels or ping families, an admin must run **`/setup`** then **`/onboard`**. `/setup` creates new channels and ping roles; it does **not** delete leftover `#engineering-jobs`, `#design-jobs`, `#growth-jobs`, or `@Engineering` / `@Design` / `@Growth` — remove those in Discord if you no longer want them. Re-run `/onboard` so the reaction panel lists the new emojis, then drag the **job board** role above the new ping roles.
 
-No new `.env` keys. Turn families on or off with `enabled` in `src/config/roles.config.ts` (same idea as adapter `enabled`).
+No new `.env` keys. Turn families on or off with `enabled` in `src/config/roles.config.ts` (same idea as adapter `enabled`). In Discord, **`/settings`** lists those values.
 
 SQLite lives in the `intern-board-data` volume. Back it up with:
 
@@ -124,7 +124,7 @@ pm2 logs intern-board
 ## First-boot Discord smoke
 
 1. Confirm the bot is online (logs / Discord member list).
-2. In the welcome channel, run **`/onboard`** (Administrator). This creates the enabled job channels + ping roles if missing, posts the welcome embed, and adds family emoji reactions.
+2. In the welcome channel, run **`/onboard`** (Administrator). Join/boot does not create channels. `/onboard` creates the enabled job channels + ping roles if missing, posts the welcome embed, and adds family emoji reactions.
 3. React to an emoji and confirm you received the family ping roles.
 4. With `BACKFILL=true`, confirm job embeds appear in channels (sends are rate-limited ~1 / 2s).
 5. Set `BACKFILL=false` in `.env`, then restart (`docker compose up -d` or `pm2 restart intern-board`).
@@ -137,4 +137,4 @@ pm2 logs intern-board
 - If a token leaks, rotate it in the Discord Developer Portal and update `.env` + restart.
 - This process only configures the first guild the bot is in.
 - PM2 SQLite backup (non-Docker): `mkdir -p backups && cp prisma/prod.db "backups/prod-$(date +%Y%m%d-%H%M%S).db"`.
-- PM2 updates: `git pull && npm ci && npx prisma migrate deploy && npm run build && pm2 restart intern-board`. After a pull that changes channels or ping families, run **`/setup`** then **`/onboard`**. Leftover `#engineering-jobs` / `@Engineering` can be deleted in Discord.
+- PM2 updates: `git pull && npm ci && npx prisma migrate deploy && npm run build && pm2 restart intern-board`. After a pull that changes channels or ping families, run **`/setup`** then **`/onboard`**. Leftover `#engineering-jobs` / `#design-jobs` / `#growth-jobs` can be deleted in Discord.

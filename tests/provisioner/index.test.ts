@@ -48,7 +48,10 @@ describe("ensureGuildSetup", () => {
     expect(mockRoleCreate).not.toHaveBeenCalledWith(expect.objectContaining({ name: "Engineering" }));
     expect(mockRoleCreate).not.toHaveBeenCalledWith(expect.objectContaining({ name: "SWE - Frontend" }));
     expect(mockChannelCreate).toHaveBeenCalledWith(expect.objectContaining({ name: "civil-structural-jobs" }));
+    expect(mockChannelCreate).toHaveBeenCalledWith(expect.objectContaining({ name: "other-jobs" }));
     expect(mockChannelCreate).not.toHaveBeenCalledWith(expect.objectContaining({ name: "engineering-jobs" }));
+    expect(mockChannelCreate).not.toHaveBeenCalledWith(expect.objectContaining({ name: "design-jobs" }));
+    expect(mockChannelCreate).not.toHaveBeenCalledWith(expect.objectContaining({ name: "growth-jobs" }));
   });
 
   it("skips existing channels and roles", async () => {

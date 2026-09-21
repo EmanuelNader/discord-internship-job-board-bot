@@ -30,7 +30,7 @@ npm test
 
 ## Add or change ping families
 
-Edit `src/config/roles.config.ts` (channel name, emoji, Discord role name, `enabled`). `/onboard` and boot-time provisioning read this file. Set `enabled: false` to skip that family’s channel, onboard reaction, `/role` option, and posting.
+Edit `src/config/roles.config.ts` (channel name, emoji, Discord role name, `enabled`). `/settings` lists those values in Discord. `/setup` and `/onboard` apply them; joining or restarting does not create channels. Set `enabled: false` to skip that family’s channel, onboard reaction, `/role` option, and posting.
 
 ## Pull requests
 

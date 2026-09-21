@@ -1,5 +1,11 @@
 import type { RoleFamily, RoleTitle } from "@/lib/types";
 
+/**
+ * Family settings live here — not in .env and not in the Discord portal.
+ * Set `enabled: false` to hide that family’s channel, onboard emoji, /role option, and posts.
+ * After a change, run `/setup` then `/onboard`. `/settings` lists the current values in Discord.
+ */
+
 export interface RoleTitleConfig {
   title: RoleTitle;
   roleName: string;      // Legacy Discord role name; deleted on setup
@@ -132,25 +138,16 @@ export const roleFamilies: RoleFamilyConfig[] = [
     ],
   },
   {
-    family: "design",
-    channelName: "design-jobs",
-    emoji: "🎨",
-    roleName: "Design",
+    family: "other",
+    channelName: "other-jobs",
+    emoji: "📦",
+    roleName: "Other",
     enabled: true,
     titles: [
       { title: "design-ux", roleName: "Design - UX", description: "UX design internships" },
       { title: "design-ui", roleName: "Design - UI", description: "UI design internships" },
       { title: "design-product", roleName: "Design - Product", description: "Product design internships" },
       { title: "design-interaction", roleName: "Design - Interaction", description: "Interaction design internships" },
-    ],
-  },
-  {
-    family: "growth",
-    channelName: "growth-jobs",
-    emoji: "📈",
-    roleName: "Growth",
-    enabled: true,
-    titles: [
       { title: "growth-general", roleName: "Growth - General", description: "General growth marketing internships" },
       { title: "growth-lifecycle", roleName: "Growth - Lifecycle", description: "Lifecycle marketing internships" },
       { title: "growth-acquisition", roleName: "Growth - Acquisition", description: "User acquisition internships" },

@@ -11,8 +11,7 @@ export type RoleFamily =
   | "electrical"
   | "chemical"
   | "aerospace"
-  | "design"
-  | "growth";
+  | "other";
 export type RoleTitle =
   | "swe-frontend" | "swe-backend" | "swe-fullstack" | "swe-mobile" | "swe-devops" | "swe-embedded"
   | "pm-product" | "pm-program" | "pm-tpm"

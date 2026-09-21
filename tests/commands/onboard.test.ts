@@ -31,7 +31,10 @@ describe("onboard embed", () => {
     expect(pings?.value).toContain("💻");
     expect(pings?.value).toContain("#civil-structural-jobs");
     expect(pings?.value).toContain("#mechanical-jobs");
+    expect(pings?.value).toContain("#other-jobs");
     expect(pings?.value).not.toContain("#engineering-jobs");
+    expect(pings?.value).not.toContain("#design-jobs");
+    expect(pings?.value).not.toContain("#growth-jobs");
   });
 });
 
@@ -79,6 +82,7 @@ describe("handleOnboardReaction", () => {
     expect(familyForEmoji("⚡")?.family).toBe("electrical");
     expect(familyForEmoji("🧪")?.family).toBe("chemical");
     expect(familyForEmoji("🚀")?.family).toBe("aerospace");
+    expect(familyForEmoji("📦")?.family).toBe("other");
     expect(familyForEmoji("nope")).toBeUndefined();
   });
 

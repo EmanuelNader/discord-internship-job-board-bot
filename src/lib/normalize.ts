@@ -79,13 +79,11 @@ const FAMILY_KEYWORDS: Record<RoleFamily, RegExp[]> = {
   aerospace: [
     /\b(aerospace\s+engineer(?:ing)?)\b/i,
   ],
-  design: [
+  other: [
     /\b(ux\s+designer|user\s+experience\s+designer)\b/i,
     /\b(ui\s+designer|user\s+interface\s+designer)\b/i,
     /\b(product\s+designer)\b/i,
     /\b(interaction\s+designer)\b/i,
-  ],
-  growth: [
     /\b(growth\s+marketing|growth\s+engineer)\b/i,
     /\b(lifecycle\s+marketing)\b/i,
     /\b(user\s+acquisition|acquisition\s+marketing)\b/i,
@@ -149,13 +147,11 @@ const TITLE_KEYWORDS: Record<RoleFamily, Partial<Record<RoleTitle, RegExp>>> = {
   aerospace: {
     "eng-aerospace": /\b(aerospace\s+engineer(?:ing)?)\b/i,
   },
-  design: {
+  other: {
     "design-ux": /\b(ux\s+designer|user\s+experience\s+designer)\b/i,
     "design-ui": /\b(ui\s+designer|user\s+interface\s+designer)\b/i,
     "design-product": /\b(product\s+designer)\b/i,
     "design-interaction": /\b(interaction\s+designer)\b/i,
-  },
-  growth: {
     "growth-general": /\b(growth\s+marketing|growth\s+engineer)\b/i,
     "growth-lifecycle": /\b(lifecycle\s+marketing)\b/i,
     "growth-acquisition": /\b(user\s+acquisition|acquisition\s+marketing)\b/i,

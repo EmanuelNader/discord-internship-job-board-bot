@@ -20,9 +20,10 @@ describe("roleFamilies", () => {
       "electrical",
       "chemical",
       "aerospace",
-      "design",
-      "growth",
+      "other",
     ]));
+    expect(families).not.toContain("design");
+    expect(families).not.toContain("growth");
   });
 
   it("maps club tracks to their channels and ping roles", () => {
@@ -50,6 +51,11 @@ describe("roleFamilies", () => {
     expect(byFamily.aerospace).toMatchObject({
       channelName: "aerospace-jobs",
       roleName: "Aerospace",
+      enabled: true,
+    });
+    expect(byFamily.other).toMatchObject({
+      channelName: "other-jobs",
+      roleName: "Other",
       enabled: true,
     });
   });

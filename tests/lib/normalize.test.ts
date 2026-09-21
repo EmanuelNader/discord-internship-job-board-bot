@@ -248,15 +248,14 @@ describe("detectRoleFamily", () => {
     ["Mechanical Engineer Intern", ["mechanical"], "mechanical"],
     ["Chemical Engineering Intern", ["chemical"], "chemical"],
     ["Aerospace Engineer Intern", ["aerospace"], "aerospace"],
-    // Design
-    ["UX Designer Intern", ["design"], "ux"],
-    ["UI Designer Co-op", ["design"], "ui"],
-    ["Product Designer Intern", ["design"], "product design"],
-    ["Interaction Designer Intern", ["design"], "interaction"],
-    // Growth
-    ["Growth Marketing Intern", ["growth"], "growth marketing"],
-    ["Lifecycle Marketing Intern", ["growth"], "lifecycle"],
-    ["User Acquisition Intern", ["growth"], "acquisition"],
+    // Design + growth
+    ["UX Designer Intern", ["other"], "ux"],
+    ["UI Designer Co-op", ["other"], "ui"],
+    ["Product Designer Intern", ["other"], "product design"],
+    ["Interaction Designer Intern", ["other"], "interaction"],
+    ["Growth Marketing Intern", ["other"], "growth marketing"],
+    ["Lifecycle Marketing Intern", ["other"], "lifecycle"],
+    ["User Acquisition Intern", ["other"], "acquisition"],
     // Multi-family (title spans families)
     ["Software Engineer Intern - Hardware Team", ["swe", "hardware"], "multi-family"],
     // Unknown
@@ -315,15 +314,14 @@ describe("detectRoleTitles", () => {
     ["Mechanical Engineer Intern", ["mechanical"], ["eng-mechanical"], "mechanical"],
     ["Chemical Engineering Intern", ["chemical"], ["eng-chemical"], "chemical"],
     ["Aerospace Engineer Intern", ["aerospace"], ["eng-aerospace"], "aerospace"],
-    // Design
-    ["UX Designer Intern", ["design"], ["design-ux"], "ux"],
-    ["UI Designer Co-op", ["design"], ["design-ui"], "ui"],
-    ["Product Designer Intern", ["design"], ["design-product"], "product design"],
-    ["Interaction Designer Intern", ["design"], ["design-interaction"], "interaction"],
-    // Growth
-    ["Growth Marketing Intern", ["growth"], ["growth-general"], "growth general"],
-    ["Lifecycle Marketing Intern", ["growth"], ["growth-lifecycle"], "lifecycle"],
-    ["User Acquisition Intern", ["growth"], ["growth-acquisition"], "acquisition"],
+    // Design + growth → other
+    ["UX Designer Intern", ["other"], ["design-ux"], "ux"],
+    ["UI Designer Co-op", ["other"], ["design-ui"], "ui"],
+    ["Product Designer Intern", ["other"], ["design-product"], "product design"],
+    ["Interaction Designer Intern", ["other"], ["design-interaction"], "interaction"],
+    ["Growth Marketing Intern", ["other"], ["growth-general"], "growth general"],
+    ["Lifecycle Marketing Intern", ["other"], ["growth-lifecycle"], "lifecycle"],
+    ["User Acquisition Intern", ["other"], ["growth-acquisition"], "acquisition"],
     // Title not in family -> empty
     ["Frontend Engineer Intern", ["data"], [], "wrong family"],
     // Empty
