@@ -3,16 +3,15 @@ import {
   EmbedBuilder,
   PermissionFlagsBits,
   SlashCommandBuilder,
-  TextChannel,
 } from "discord.js";
 import { ensureGuildSetup } from "@/provisioner/index";
-import { getEnabledRoleFamilies } from "@/config/roles.config";
+import { getEnabledRoleFamilies, OVERVIEW_CHANNEL_NAME } from "@/config/roles.config";
 import { adapterConfigs } from "@/config/adapters.config";
 import { prisma } from "@/db/client";
 
 export const onboardCommand = new SlashCommandBuilder()
   .setName("onboard")
-  .setDescription("[Admin] Create channels and post the welcome + reaction-role panel")
+  .setDescription("[Admin] Create channels and post the reaction panel in #job-board")
   .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
 function sourceBlurb(): string {
@@ -32,7 +31,7 @@ function sourceBlurb(): string {
 
 export function buildOnboardEmbed(): EmbedBuilder {
   const reactions = getEnabledRoleFamilies()
-    .map((f) => `${f.emoji}  \`#${f.channelName}\``)
+    .map((f) => `${f.emoji}  ${f.overviewLabel ?? f.roleName}  \`#${f.channelName}\``)
     .join("\n");
 
   return new EmbedBuilder()
@@ -41,6 +40,8 @@ export function buildOnboardEmbed(): EmbedBuilder {
     .setDescription(
       [
         "This bot watches public internship lists and company career pages, keeps **US intern / co-op / fellowship** roles, and posts them into the matching channel below.",
+        "",
+        `This is \`#${OVERVIEW_CHANNEL_NAME}\` — react here for pings. Listings never post in this channel.`,
         "",
         "React with an emoji to get pinged when a new listing lands in that family. Remove the reaction to stop pings. You can also use `/role` / `/unrole`.",
       ].join("\n")
@@ -54,22 +55,17 @@ export function buildOnboardEmbed(): EmbedBuilder {
 export async function handleOnboard(interaction: ChatInputCommandInteraction): Promise<void> {
   await interaction.deferReply({ ephemeral: true });
 
-  const channel = interaction.channel;
-  if (!channel || !channel.isTextBased() || channel.isDMBased()) {
-    await interaction.editReply({ content: "Run /onboard in a server text channel." });
+  if (!interaction.guild) {
+    await interaction.editReply({ content: "Run /onboard in a server." });
     return;
   }
 
   try {
-    if (!interaction.guild) {
-      await interaction.editReply({ content: "Run /onboard in a server text channel." });
-      return;
-    }
-    await ensureGuildSetup(interaction.guild);
+    const overview = await ensureGuildSetup(interaction.guild);
+    await removePreviousPanel(interaction.guildId!, interaction.guild);
 
     const embed = buildOnboardEmbed();
-    const textChannel = channel as TextChannel;
-    const message = await textChannel.send({ embeds: [embed] });
+    const message = await overview.send({ embeds: [embed] });
     for (const family of getEnabledRoleFamilies()) {
       await message.react(family.emoji);
     }
@@ -78,19 +74,32 @@ export async function handleOnboard(interaction: ChatInputCommandInteraction): P
       where: { guildId: interaction.guildId! },
       create: {
         guildId: interaction.guildId!,
-        channelId: textChannel.id,
+        channelId: overview.id,
         messageId: message.id,
       },
       update: {
-        channelId: textChannel.id,
+        channelId: overview.id,
         messageId: message.id,
       },
     });
 
     await interaction.editReply({
-      content: `Onboarding posted in <#${textChannel.id}>. Job channels and ping roles are ready.`,
+      content: `Overview posted in <#${overview.id}>. React there for pings — listings go in the family channels, not here.`,
     });
   } catch (err) {
     await interaction.editReply({ content: `Onboard failed: ${(err as Error).message}` });
+  }
+}
+
+async function removePreviousPanel(guildId: string, guild: NonNullable<ChatInputCommandInteraction["guild"]>): Promise<void> {
+  const previous = await prisma.onboardPanel.findUnique({ where: { guildId } });
+  if (!previous) return;
+  try {
+    const channel = await guild.channels.fetch(previous.channelId);
+    if (!channel || !channel.isTextBased()) return;
+    const oldMessage = await channel.messages.fetch(previous.messageId);
+    await oldMessage.delete();
+  } catch {
+    // Old panel already gone (deleted channel, missing message, etc.)
   }
 }

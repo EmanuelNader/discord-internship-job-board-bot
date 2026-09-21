@@ -5,6 +5,7 @@ describe("settings embed", () => {
   it("lists every family with enabled and channel", () => {
     const embed = buildSettingsEmbed().toJSON();
     expect(embed.title).toMatch(/settings/i);
+    expect(embed.description).toContain("#job-board");
     expect(embed.description).toContain("#swe-jobs");
     expect(embed.description).toContain("#other-jobs");
     expect(embed.description).toContain("**Other**");

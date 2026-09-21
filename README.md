@@ -18,6 +18,8 @@ Invite URL (replace `CLIENT_ID` with the Application ID):
 https://discord.com/oauth2/authorize?client_id=CLIENT_ID&permissions=2416004176&scope=bot%20applications.commands
 ```
 
+Use that full URL (both `bot` and `applications.commands`). Discord’s short “install” link is user-install only — `/` will be empty on a new server.
+
 That grant is: View Channels, Manage Channels, Manage Roles, Send Messages, Embed Links, Add Reactions, Read Message History, Use Application Commands.
 
 Put the bot’s role **above** the ping roles it creates, or reaction-role assignment fails. No privileged Gateway Intents are required.
@@ -32,7 +34,7 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-Invite the bot **before** the first start. Joining does **not** create channels. In a server text channel, run **`/onboard`** (Administrator). That creates the job channels and ping roles if missing, posts the welcome embed, and adds family emoji reactions.
+Invite the bot **before** the first start. Joining does **not** create channels. Run **`/onboard`** anywhere in the server (Administrator). That creates `#job-board` plus the family channels and ping roles if missing, posts the reaction panel in `#job-board` (not in `#general`), and adds family emoji reactions.
 
 On first join the bot posts US intern listings from the **last 7 days** (rate-limited ~1 / 2s), then only newer ones after that. Set `INITIAL_LOOKBACK_DAYS=0` to start from today only.
 
@@ -54,7 +56,7 @@ npm run dev
 
 | Command | Who | What |
 | --- | --- | --- |
-| `/onboard` | Admin | Create channels/roles, post the reaction-role panel |
+| `/onboard` | Admin | Create `#job-board` + family channels/roles, post the reaction panel in `#job-board` |
 | `/role` `/unrole` | Anyone | Join or leave a family ping role |
 | `/status` | Anyone | Adapter health |
 | `/ping` | Anyone | Liveness |

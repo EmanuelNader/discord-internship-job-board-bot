@@ -1,5 +1,6 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
 import { ensureGuildSetup } from "@/provisioner/index";
+import { OVERVIEW_CHANNEL_NAME } from "@/config/roles.config";
 
 export const setupCommand = new SlashCommandBuilder()
   .setName("setup")
@@ -14,7 +15,9 @@ export async function handleSetup(interaction: ChatInputCommandInteraction): Pro
       return;
     }
     await ensureGuildSetup(interaction.guild);
-    await interaction.editReply({ content: "Setup complete. Channels, roles, and channel map are ready." });
+    await interaction.editReply({
+      content: `Setup complete. \`#${OVERVIEW_CHANNEL_NAME}\`, job channels, roles, and channel map are ready. Run /onboard to post the reaction panel in \`#${OVERVIEW_CHANNEL_NAME}\`.`,
+    });
   } catch (err) {
     await interaction.editReply({ content: `Setup failed: ${(err as Error).message}` });
   }

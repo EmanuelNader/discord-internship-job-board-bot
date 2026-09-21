@@ -27,7 +27,12 @@ describe("ensureGuildSetup", () => {
       roles: { fetch: mockRolesFetch, create: mockRoleCreate },
     };
 
-    mockChannelCreate.mockResolvedValue({ id: "chan_1" });
+    mockChannelCreate.mockImplementation(async (opts: { name: string }) => ({
+      id: `chan_${opts.name}`,
+      name: opts.name,
+      isTextBased: () => true,
+      isDMBased: () => false,
+    }));
     mockRoleCreate.mockResolvedValue({ id: "role_1" });
 
     await ensureGuildSetup(mockGuild as any);
@@ -41,6 +46,9 @@ describe("ensureGuildSetup", () => {
     expect(mockRoleCreate).not.toHaveBeenCalledWith(expect.objectContaining({ name: "SWE - Frontend" }));
     expect(mockChannelCreate).toHaveBeenCalledWith(expect.objectContaining({ name: "civil-structural-jobs" }));
     expect(mockChannelCreate).toHaveBeenCalledWith(expect.objectContaining({ name: "other-jobs" }));
+    expect(mockChannelCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ name: "job-board", position: 0 })
+    );
     expect(mockChannelCreate).not.toHaveBeenCalledWith(expect.objectContaining({ name: "engineering-jobs" }));
     expect(mockChannelCreate).not.toHaveBeenCalledWith(expect.objectContaining({ name: "design-jobs" }));
     expect(mockChannelCreate).not.toHaveBeenCalledWith(expect.objectContaining({ name: "growth-jobs" }));
@@ -50,6 +58,7 @@ describe("ensureGuildSetup", () => {
     const mockGuild = {
       channels: {
         fetch: vi.fn().mockResolvedValue([
+          { name: "job-board", id: "overview_chan", isTextBased: () => true, isDMBased: () => false },
           { name: "swe-jobs", id: "existing_chan" },
         ]),
         create: mockChannelCreate,
@@ -66,6 +75,7 @@ describe("ensureGuildSetup", () => {
 
     // Should NOT create existing channel or role
     expect(mockChannelCreate).not.toHaveBeenCalledWith(expect.objectContaining({ name: "swe-jobs" }));
+    expect(mockChannelCreate).not.toHaveBeenCalledWith(expect.objectContaining({ name: "job-board" }));
     expect(mockRoleCreate).not.toHaveBeenCalledWith(expect.objectContaining({ name: "SWE" }));
   });
 });

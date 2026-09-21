@@ -25,31 +25,38 @@ const client = new Client({
 let manager: SourcesManager | null = null;
 let poster: Poster | null = null;
 let clientReady = false;
+let postingStarted = false;
 
 async function startPosting(guildId: string) {
-  if (manager) return;
-  const liveSince = await ensureLiveSince(guildId, new Date(), env.INITIAL_LOOKBACK_DAYS);
-  console.log(`Only posting jobs published on or after ${liveSince.toISOString().slice(0, 10)}`);
+  if (postingStarted) return;
+  postingStarted = true;
+  try {
+    const liveSince = await ensureLiveSince(guildId, new Date(), env.INITIAL_LOOKBACK_DAYS);
+    console.log(`Only posting jobs published on or after ${liveSince.toISOString().slice(0, 10)}`);
 
-  poster = new Poster(client, prisma);
+    poster = new Poster(client, prisma);
 
-  if (env.BACKFILL) {
-    console.log(`Running backfill (limit ${env.BACKFILL_LIMIT} per source)...`);
-    await runBackfill(
-      { enabled: true, limitPerSource: env.BACKFILL_LIMIT, liveSince },
-      (posting, hash) => poster!.send(posting, hash)
+    if (env.BACKFILL) {
+      console.log(`Running backfill (limit ${env.BACKFILL_LIMIT} per source)...`);
+      await runBackfill(
+        { enabled: true, limitPerSource: env.BACKFILL_LIMIT, liveSince },
+        (posting, hash) => poster!.send(posting, hash)
+      );
+      console.log("Backfill complete");
+    }
+
+    manager = new SourcesManager(
+      getAllAdapters(),
+      (posting, hash) => poster!.send(posting, hash),
+      (source, error) => console.error(`[${source}] ${error.message}`),
+      liveSince
     );
-    console.log("Backfill complete");
+    manager.start();
+    console.log("SourcesManager started");
+  } catch (err) {
+    postingStarted = false;
+    throw err;
   }
-
-  manager = new SourcesManager(
-    getAllAdapters(),
-    (posting, hash) => poster!.send(posting, hash),
-    (source, error) => console.error(`[${source}] ${error.message}`),
-    liveSince
-  );
-  manager.start();
-  console.log("SourcesManager started");
 }
 
 async function shutdown(signal: string) {
@@ -81,8 +88,9 @@ client.once(Events.ClientReady, async () => {
       );
     }
 
-    // Channels/roles are created only by /setup or /onboard, not on join or boot.
+    // Commands first, then mark ready so a join during backfill still gets /commands.
     await deployCommands(client);
+    clientReady = true;
 
     const guild = client.guilds.cache.first();
     if (!guild) {
@@ -93,18 +101,15 @@ client.once(Events.ClientReady, async () => {
   } catch (err) {
     console.error("Startup failed:", err);
     process.exit(1);
-  } finally {
-    clientReady = true;
   }
 });
 
 client.on(Events.GuildCreate, (guild) => {
   void (async () => {
-    if (!clientReady) return;
     console.log(`Joined ${guild.name} (${guild.id}); deploying slash commands`);
     try {
       await deployCommands(client, guild);
-      await startPosting(guild.id);
+      if (clientReady) await startPosting(guild.id);
     } catch (err) {
       console.error(`Failed to finish join for ${guild.id}:`, err);
     }

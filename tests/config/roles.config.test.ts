@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   filterEnabledRoleFamilies,
   getEnabledRoleFamilies,
+  OVERVIEW_CHANNEL_NAME,
   roleFamilies,
 } from "@/config/roles.config";
 
@@ -72,6 +73,7 @@ describe("roleFamilies", () => {
     expect(new Set(channels).size).toBe(channels.length);
     expect(new Set(emojis).size).toBe(emojis.length);
     expect(new Set(roles).size).toBe(roles.length);
+    expect(channels).not.toContain(OVERVIEW_CHANNEL_NAME);
   });
 
   it("keeps civil and structural titles on the same family", () => {

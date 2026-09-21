@@ -1,10 +1,23 @@
-import { Guild } from "discord.js";
-import { getEnabledRoleFamilies } from "@/config/roles.config";
+import { Guild, TextChannel } from "discord.js";
+import { getEnabledRoleFamilies, OVERVIEW_CHANNEL_NAME } from "@/config/roles.config";
 import { prisma } from "@/db/client";
 
-export async function ensureGuildSetup(guild: Guild): Promise<void> {
+export async function ensureGuildSetup(guild: Guild): Promise<TextChannel> {
   const existingChannels = await guild.channels.fetch();
   const existingRoles = await guild.roles.fetch();
+
+  let overview = existingChannels.find((c) => c?.name === OVERVIEW_CHANNEL_NAME);
+  if (!overview) {
+    overview = await guild.channels.create({
+      name: OVERVIEW_CHANNEL_NAME,
+      type: 0, // GuildText
+      topic: "React here for internship pings. New listings post in the family channels.",
+      position: 0,
+    });
+  }
+  if (!overview.isTextBased() || overview.isDMBased()) {
+    throw new Error(`#${OVERVIEW_CHANNEL_NAME} exists but is not a text channel.`);
+  }
 
   for (const family of getEnabledRoleFamilies()) {
     const channelName = family.channelName;
@@ -48,4 +61,6 @@ export async function ensureGuildSetup(guild: Guild): Promise<void> {
       }
     }
   }
+
+  return overview as TextChannel;
 }

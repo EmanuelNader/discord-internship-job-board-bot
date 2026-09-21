@@ -13,7 +13,7 @@ Replace `CLIENT_ID` with the Application ID from the Discord Developer Portal:
 https://discord.com/oauth2/authorize?client_id=CLIENT_ID&permissions=2416004176&scope=bot%20applications.commands
 ```
 
-That grant is: View Channels, Manage Channels, Manage Roles, Send Messages, Embed Links, Add Reactions, Read Message History, Use Application Commands.
+Always invite with **both** `bot` and `applications.commands` (the URL above). Do **not** use Discord’s short “install” / user-install link — that is why `/` is empty on a new server. In the Developer Portal → **Installation**, Guild Install should include `bot` + `applications.commands` and the permission integer `2416004176`.
 
 Put the bot’s role **above** the ping roles it creates, or reaction-role assignment fails.
 
@@ -124,7 +124,7 @@ pm2 logs intern-board
 ## First-boot Discord smoke
 
 1. Confirm the bot is online (logs / Discord member list).
-2. In the welcome channel, run **`/onboard`** (Administrator). Join/boot does not create channels. `/onboard` creates the enabled job channels + ping roles if missing, posts the welcome embed, and adds family emoji reactions.
+2. Run **`/onboard`** anywhere in the server (Administrator). Join/boot does not create channels. `/onboard` creates `#job-board` plus the enabled job channels + ping roles if missing, posts the welcome embed in `#job-board` (not in the channel you typed in), and adds family emoji reactions.
 3. React to an emoji and confirm you received the family ping roles.
 4. With `BACKFILL=true`, confirm job embeds appear in channels (sends are rate-limited ~1 / 2s).
 5. Set `BACKFILL=false` in `.env`, then restart (`docker compose up -d` or `pm2 restart intern-board`).

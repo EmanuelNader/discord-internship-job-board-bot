@@ -1,5 +1,4 @@
-import { REST, Routes } from "discord.js";
-import { Client, Guild } from "discord.js";
+import { REST, Routes, Client, Guild } from "discord.js";
 import { pingCommand } from "./ping";
 import { roleCommand, unroleCommand } from "./role";
 import { statusCommand } from "./status";
@@ -13,18 +12,23 @@ const commands = [
   statusCommand, linkchannelCommand, setupCommand, onboardCommand, settingsCommand,
 ].map((c) => c.toJSON());
 
+/**
+ * Publish slash commands so they show up the first time someone types `/`.
+ * Global copy: every future invite inherits them (Discord can lag up to an hour on first publish).
+ * Guild copy: available immediately in that server, including a join while the bot is already running.
+ */
 export async function deployCommands(client: Client, guild?: Guild): Promise<void> {
   const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN!);
   if (!client.user) {
     throw new Error("Cannot deploy commands before the Discord client is logged in.");
   }
 
-  const guilds = guild ? [guild] : [...client.guilds.cache.values()];
-  if (guilds.length === 0) {
-    console.warn("No guilds yet; slash commands will deploy when the bot joins a server.");
-    return;
+  if (!guild) {
+    await rest.put(Routes.applicationCommands(client.user.id), { body: commands });
+    console.log(`Deployed ${commands.length} global slash commands`);
   }
 
+  const guilds = guild ? [guild] : [...client.guilds.cache.values()];
   for (const target of guilds) {
     await rest.put(Routes.applicationGuildCommands(client.user.id, target.id), {
       body: commands,

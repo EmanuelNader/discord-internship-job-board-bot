@@ -6,6 +6,9 @@ import type { RoleFamily, RoleTitle } from "@/lib/types";
  * After a change, run `/setup` then `/onboard`. `/settings` lists the current values in Discord.
  */
 
+/** Hub channel for the /onboard reaction panel. Listings still go in family channels. */
+export const OVERVIEW_CHANNEL_NAME = "job-board";
+
 export interface RoleTitleConfig {
   title: RoleTitle;
   roleName: string;      // Legacy Discord role name; deleted on setup
@@ -17,6 +20,7 @@ export interface RoleFamilyConfig {
   channelName: string;   // e.g., "swe-jobs"
   emoji: string;         // Unicode emoji for /onboard reaction roles
   roleName: string;     // Discord ping role (one per family)
+  overviewLabel?: string; // Optional label on the /onboard ping list; defaults to roleName
   enabled: boolean;     // false: skip channel/role provision, onboard, /role, and posting
   titles: RoleTitleConfig[];
 }
@@ -142,6 +146,7 @@ export const roleFamilies: RoleFamilyConfig[] = [
     channelName: "other-jobs",
     emoji: "📦",
     roleName: "Other",
+    overviewLabel: "Other (Design + Growth)",
     enabled: true,
     titles: [
       { title: "design-ux", roleName: "Design - UX", description: "UX design internships" },

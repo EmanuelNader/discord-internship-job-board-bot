@@ -4,7 +4,7 @@ import {
   PermissionFlagsBits,
   SlashCommandBuilder,
 } from "discord.js";
-import { roleFamilies } from "@/config/roles.config";
+import { roleFamilies, OVERVIEW_CHANNEL_NAME } from "@/config/roles.config";
 
 export const settingsCommand = new SlashCommandBuilder()
   .setName("settings")
@@ -20,7 +20,7 @@ export function buildSettingsEmbed(): EmbedBuilder {
   return new EmbedBuilder()
     .setTitle("Job family settings")
     .setColor(0x5865f2)
-    .setDescription(lines.join("\n"))
+    .setDescription([`Overview: \`#${OVERVIEW_CHANNEL_NAME}\``, "", ...lines].join("\n"))
     .setFooter({
       text: "Flip enabled in src/config/roles.config.ts, rebuild, then /setup. Join does not create channels.",
     });
