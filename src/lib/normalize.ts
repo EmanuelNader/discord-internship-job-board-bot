@@ -9,7 +9,8 @@ const NAMED_FELLOWSHIPS = /\b(xrds|google\s+phd|fb\s+fellowship|facebook\s+fello
 const DROP_SENIORITY = /\b(senior|staff|principal|manager(?!\s+of\s+\w+\s+intern)|head\s+of|director|vp\b|lead\b)/i;
 const DROP_NEWGRAD = /\b(new\s+grad|new\s+graduate|graduate\s+program|early\s+career|development\s+program|rotational\s+program|campus\s+hire|entry\s+level|campus\s+to\s+career)\b/i;
 
-export function detectLevel(title: string, _raw?: RawPosting): Level | null {
+export function detectLevel(title: string | null | undefined, _raw?: RawPosting): Level | null {
+  if (typeof title !== "string" || !title.trim()) return null;
   const norm = title.trim().replace(/\s+/g, " ").toLowerCase();
 
   if (DROP_NEWGRAD.test(norm)) return null;

@@ -149,6 +149,11 @@ describe("detectLevel", () => {
       expect(detectLevel("")).toBeNull();
     });
 
+    it("returns null when Workday omits title", () => {
+      expect(detectLevel(undefined)).toBeNull();
+      expect(detectLevel(null)).toBeNull();
+    });
+
     it("returns null for whitespace only", () => {
       expect(detectLevel("   ")).toBeNull();
     });

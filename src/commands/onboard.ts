@@ -8,6 +8,7 @@ import { ensureGuildSetup } from "@/provisioner/index";
 import { getEnabledRoleFamilies, OVERVIEW_CHANNEL_NAME } from "@/config/roles.config";
 import { adapterConfigs } from "@/config/adapters.config";
 import { prisma } from "@/db/client";
+import { seedRecentPostingsForGuild } from "@/poster/seed";
 
 export const onboardCommand = new SlashCommandBuilder()
   .setName("onboard")
@@ -84,7 +85,10 @@ export async function handleOnboard(interaction: ChatInputCommandInteraction): P
     });
 
     await interaction.editReply({
-      content: `Overview posted in <#${overview.id}>. React there for pings — listings go in the family channels, not here.`,
+      content: `Overview posted in <#${overview.id}>. React there for pings — listings go in the family channels, not here. Filling those channels with recent internships...`,
+    });
+    void seedRecentPostingsForGuild(interaction.client, interaction.guildId!).catch((err) => {
+      console.error("Failed to seed job channels after /onboard:", err);
     });
   } catch (err) {
     await interaction.editReply({ content: `Onboard failed: ${(err as Error).message}` });

@@ -9,6 +9,7 @@ import { deployCommands } from "@/commands/deploy";
 import { handleInteraction, handleAutocomplete } from "@/commands/index";
 import { handleOnboardReaction } from "@/commands/onboard-reactions";
 import { Poster } from "@/poster/index";
+import { seedRecentPostings } from "@/poster/seed";
 import { ensureLiveSince } from "@/lib/live-since";
 
 const env = validateEnv();
@@ -43,6 +44,14 @@ async function startPosting(guildId: string) {
         (posting, hash) => poster!.send(posting, hash)
       );
       console.log("Backfill complete");
+    }
+
+    const seeded = await seedRecentPostings(
+      (posting, hash) => poster!.send(posting, hash),
+      liveSince
+    );
+    if (seeded.sent > 0 || seeded.skipped > 0) {
+      console.log(`Seeded ${seeded.sent} jobs into mapped channels (${seeded.skipped} already delivered)`);
     }
 
     manager = new SourcesManager(

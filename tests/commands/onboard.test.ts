@@ -8,6 +8,10 @@ vi.mock("@/provisioner/index", () => ({
   ensureGuildSetup: mockEnsureGuildSetup,
 }));
 
+vi.mock("@/poster/seed", () => ({
+  seedRecentPostingsForGuild: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock("@/db/client", () => ({
   prisma: {
     onboardPanel: {
