@@ -1,7 +1,8 @@
 import { prisma } from "@/db/client";
 import { getAllAdapters } from "@/adapters";
-import { detectLevel, detectRoleFamily, detectRoleTitles, dedupHash, contentHash, isUsLocation } from "@/lib/normalize";
-import { isPostedOnOrAfter, startOfUtcDay } from "@/lib/freshness";
+import { detectLevel, detectRoleFamily, detectRoleTitles, dedupHash, contentHash, isUsLocation, atsUrlNeedle } from "@/lib/normalize";
+import { filterEnabledRoleFamilies } from "@/config/roles.config";
+import { isPostedOnOrAfter, sortNewestFirst, startOfUtcDay } from "@/lib/freshness";
 import { resolveAtsPublishedAt } from "@/lib/ats-published-at";
 
 export interface BackfillOptions {
@@ -37,23 +38,43 @@ export async function runBackfill(
   for (const adapter of adapters) {
     try {
       const rawPostings = await adapter.fetchNewPostings();
-      const limited = rawPostings.slice(0, options.limitPerSource);
+      const eligible: {
+        raw: (typeof rawPostings)[number];
+        level: string;
+        roleFamilies: string[];
+        roleTitles: string[];
+        publishedAt: string | null;
+      }[] = [];
 
-      for (const raw of limited) {
+      for (const raw of rawPostings) {
         const level = detectLevel(raw.title, raw);
         if (!level) continue;
-
         if (!isUsLocation(raw.location)) continue;
-
-        const roleFamilies = detectRoleFamily(raw.title, raw);
+        const roleFamilies = filterEnabledRoleFamilies(detectRoleFamily(raw.title, raw));
         if (roleFamilies.length === 0) continue;
+        eligible.push({
+          raw,
+          level,
+          roleFamilies,
+          roleTitles: detectRoleTitles(raw.title, roleFamilies, raw),
+          publishedAt: raw.publishedAt ?? null,
+        });
+      }
 
-        const roleTitles = detectRoleTitles(raw.title, roleFamilies, raw);
+      const limited = sortNewestFirst(eligible).slice(0, options.limitPerSource);
+
+      for (const { raw, level, roleFamilies, roleTitles } of limited) {
         const hash = dedupHash(adapter.name, raw.externalId ?? "", raw.title, raw.company);
-        const cHash = contentHash(raw.title, raw.company);
+        const cHash = contentHash(raw.title, raw.company, raw.url);
 
         // Check if this job content already exists from another source
-        const existingByContent = await prisma.posting.findUnique({ where: { contentHash: cHash } });
+        let existingByContent = await prisma.posting.findUnique({ where: { contentHash: cHash } });
+        if (!existingByContent) {
+          const needle = atsUrlNeedle(raw.url);
+          if (needle) {
+            existingByContent = await prisma.posting.findFirst({ where: { url: { contains: needle } } });
+          }
+        }
         if (existingByContent) continue;
 
         const publishedAt = raw.publishedAt ? new Date(raw.publishedAt) : null;

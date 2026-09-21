@@ -32,7 +32,7 @@ export const adapterConfigs: AdapterConfig[] = [
     "jumptrading", "akunacapital", "optiver", "imc", "chicagotrading",
     "coinbase",
     "asana", "okta", "hubspot", "flexport", "chime", "sofi",
-    "rocketlab", "relativity", "lucidmotors",
+    "rocketlab", "relativity", "lucidmotors", "vast",
   ]},
   { name: "ashby", enabled: true, pollIntervalSec: 300, companies: [
     "chalk", "notion", "ramp", "snowflake", "decagon", "distyl", "elevenlabs",
@@ -52,6 +52,8 @@ export const adapterConfigs: AdapterConfig[] = [
     "nvidia", "adobe", "salesforce", "paypal", "blue-origin", "disney", "slack",
     "3m", "abbott",
     "caterpillar", "qualcomm", "applied-materials", "rtx", "dupont", "chevron",
+    "boeing", "ge-aerospace",
+    "baker-hughes", "dow", "marathon-petroleum", "motiva", "williams",
   ], workdayBoards: [
     { name: "NVIDIA", host: "nvidia.wd5.myworkdayjobs.com", tenant: "nvidia", site: "NVIDIAExternalCareerSite" },
     { name: "Adobe", host: "adobe.wd5.myworkdayjobs.com", tenant: "adobe", site: "external_experienced" },
@@ -68,6 +70,13 @@ export const adapterConfigs: AdapterConfig[] = [
     { name: "RTX", host: "globalhr.wd5.myworkdayjobs.com", tenant: "globalhr", site: "REC_RTX_Ext_Gateway" },
     { name: "DuPont", host: "dupont.wd5.myworkdayjobs.com", tenant: "dupont", site: "Jobs" },
     { name: "Chevron", host: "chevron.wd5.myworkdayjobs.com", tenant: "chevron", site: "jobs" },
+    { name: "Boeing", host: "boeing.wd1.myworkdayjobs.com", tenant: "boeing", site: "INTERN" },
+    { name: "GE Aerospace", host: "geaerospace.wd5.myworkdayjobs.com", tenant: "geaerospace", site: "GE_ExternalSite" },
+    { name: "Baker Hughes", host: "bakerhughes.wd5.myworkdayjobs.com", tenant: "bakerhughes", site: "bakerhughes" },
+    { name: "Dow", host: "dow.wd1.myworkdayjobs.com", tenant: "dow", site: "ExternalCareers" },
+    { name: "Marathon Petroleum", host: "mpc.wd1.myworkdayjobs.com", tenant: "mpc", site: "MPCCareers" },
+    { name: "Motiva", host: "motiva.wd1.myworkdayjobs.com", tenant: "motiva", site: "MotivaCareers" },
+    { name: "Williams", host: "williams.wd5.myworkdayjobs.com", tenant: "williams", site: "External" },
   ]},
   { name: "simplify", enabled: false, pollIntervalSec: 900, companies: [] },
   { name: "github", enabled: true, pollIntervalSec: 900, companies: [

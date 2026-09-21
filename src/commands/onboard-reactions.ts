@@ -1,10 +1,10 @@
 import { MessageReaction, PartialMessageReaction, PartialUser, User } from "discord.js";
-import { roleFamilies } from "@/config/roles.config";
+import { getEnabledRoleFamilies, type RoleFamilyConfig } from "@/config/roles.config";
 import { prisma } from "@/db/client";
 
-export function familyForEmoji(emojiName: string | null): (typeof roleFamilies)[number] | undefined {
+export function familyForEmoji(emojiName: string | null): RoleFamilyConfig | undefined {
   if (!emojiName) return undefined;
-  return roleFamilies.find((f) => f.emoji === emojiName);
+  return getEnabledRoleFamilies().find((f) => f.emoji === emojiName);
 }
 
 export async function handleOnboardReaction(

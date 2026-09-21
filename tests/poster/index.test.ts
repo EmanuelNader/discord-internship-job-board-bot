@@ -130,4 +130,35 @@ describe("Poster", () => {
 
     await Promise.all([p1, p2]);
   });
+
+  it("does not post jobs whose only family is disabled or unknown", async () => {
+    await poster.send(
+      { ...samplePosting, roleFamily: ["engineering"] },
+      "hash-disabled"
+    );
+
+    expect(mockFindMany).not.toHaveBeenCalled();
+    expect(mockClientChannelsFetch).not.toHaveBeenCalled();
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it("posts only enabled families when a listing also matches a disabled one", async () => {
+    mockFindMany.mockResolvedValue([
+      { kind: "job", roleFamily: "swe", channelId: "111" },
+    ]);
+    mockClientChannelsFetch.mockResolvedValue({
+      send: mockChannelSend.mockResolvedValue({ id: "msg1" }),
+      isTextBased: () => true,
+    });
+
+    await poster.send(
+      { ...samplePosting, roleFamily: ["swe", "engineering"] },
+      "hash-mixed"
+    );
+
+    expect(mockFindMany).toHaveBeenCalledWith({
+      where: { kind: "job", roleFamily: { in: ["swe"] } },
+    });
+    expect(mockChannelSend).toHaveBeenCalledOnce();
+  });
 });

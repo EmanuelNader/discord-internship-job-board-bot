@@ -80,6 +80,15 @@ function isSkippableHref(href: string): boolean {
   );
 }
 
+function applyUrlRank(url: string): number {
+  if (/greenhouse\.io\/[^/]+\/jobs\/\d+/i.test(url)) return 0;
+  if (/lever\.co\//i.test(url)) return 0;
+  if (/ashbyhq\.com\//i.test(url)) return 0;
+  if (/myworkdayjobs\.com\//i.test(url)) return 0;
+  if (/simplify\.jobs\/p\//i.test(url)) return 2;
+  return 1;
+}
+
 function firstApplyUrl(html: string): string | null {
   const $ = cheerio.load(`<div>${html}</div>`);
   const hrefs: string[] = [];
@@ -87,7 +96,16 @@ function firstApplyUrl(html: string): string | null {
     const href = $(el).attr("href")?.trim();
     if (href && !isSkippableHref(href)) hrefs.push(href);
   });
-  return hrefs[0] ?? null;
+  let best: string | null = null;
+  let bestRank = Infinity;
+  for (const href of hrefs) {
+    const rank = applyUrlRank(href);
+    if (rank < bestRank) {
+      best = href;
+      bestRank = rank;
+    }
+  }
+  return best;
 }
 
 function cleanCellText(htmlOrText: string): string {

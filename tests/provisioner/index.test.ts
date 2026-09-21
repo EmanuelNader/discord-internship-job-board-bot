@@ -43,7 +43,12 @@ describe("ensureGuildSetup", () => {
     // Should create family ping roles (SWE, PM, ...) not per-title roles
     expect(mockRoleCreate).toHaveBeenCalled();
     expect(mockRoleCreate).toHaveBeenCalledWith(expect.objectContaining({ name: "SWE" }));
+    expect(mockRoleCreate).toHaveBeenCalledWith(expect.objectContaining({ name: "Civil/Structural" }));
+    expect(mockRoleCreate).toHaveBeenCalledWith(expect.objectContaining({ name: "Mechanical" }));
+    expect(mockRoleCreate).not.toHaveBeenCalledWith(expect.objectContaining({ name: "Engineering" }));
     expect(mockRoleCreate).not.toHaveBeenCalledWith(expect.objectContaining({ name: "SWE - Frontend" }));
+    expect(mockChannelCreate).toHaveBeenCalledWith(expect.objectContaining({ name: "civil-structural-jobs" }));
+    expect(mockChannelCreate).not.toHaveBeenCalledWith(expect.objectContaining({ name: "engineering-jobs" }));
   });
 
   it("skips existing channels and roles", async () => {

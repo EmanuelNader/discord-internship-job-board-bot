@@ -6,7 +6,7 @@ import {
   TextChannel,
 } from "discord.js";
 import { ensureGuildSetup } from "@/provisioner/index";
-import { roleFamilies } from "@/config/roles.config";
+import { getEnabledRoleFamilies } from "@/config/roles.config";
 import { adapterConfigs } from "@/config/adapters.config";
 import { prisma } from "@/db/client";
 
@@ -22,7 +22,7 @@ function sourceBlurb(): string {
     greenhouse: "Greenhouse career boards (SpaceX, Stripe, Rocket Lab, and others)",
     ashby: "Ashby boards (Notion, OpenAI, Cursor, and others)",
     lever: "Lever boards (Palantir, Spotify, Zoox, Belvedere)",
-    workday: "Workday (NVIDIA, Blue Origin, Caterpillar, Qualcomm, RTX, and others)",
+    workday: "Workday (Boeing, GE Aerospace, Baker Hughes, Dow, Caterpillar, RTX, and others)",
   };
   return enabled
     .filter((name) => labels[name])
@@ -31,7 +31,7 @@ function sourceBlurb(): string {
 }
 
 export function buildOnboardEmbed(): EmbedBuilder {
-  const reactions = roleFamilies
+  const reactions = getEnabledRoleFamilies()
     .map((f) => `${f.emoji}  \`#${f.channelName}\``)
     .join("\n");
 
@@ -66,7 +66,7 @@ export async function handleOnboard(interaction: ChatInputCommandInteraction): P
     const embed = buildOnboardEmbed();
     const textChannel = channel as TextChannel;
     const message = await textChannel.send({ embeds: [embed] });
-    for (const family of roleFamilies) {
+    for (const family of getEnabledRoleFamilies()) {
       await message.react(family.emoji);
     }
 

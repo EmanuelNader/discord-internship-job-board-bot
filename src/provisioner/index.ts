@@ -1,5 +1,5 @@
 import { Client } from "discord.js";
-import { roleFamilies } from "@/config/roles.config";
+import { getEnabledRoleFamilies } from "@/config/roles.config";
 import { prisma } from "@/db/client";
 
 export async function ensureGuildSetup(client: Client): Promise<void> {
@@ -14,7 +14,7 @@ export async function ensureGuildSetup(client: Client): Promise<void> {
   const existingChannels = await guild.channels.fetch();
   const existingRoles = await guild.roles.fetch();
 
-  for (const family of roleFamilies) {
+  for (const family of getEnabledRoleFamilies()) {
     const channelName = family.channelName;
     let channel = existingChannels.find((c) => c?.name === channelName);
 
@@ -22,7 +22,7 @@ export async function ensureGuildSetup(client: Client): Promise<void> {
       channel = await guild.channels.create({
         name: channelName,
         type: 0, // GuildText
-        topic: `${family.family.charAt(0).toUpperCase() + family.family.slice(1)} internship postings`,
+        topic: `${family.roleName} internship postings`,
       });
     }
 

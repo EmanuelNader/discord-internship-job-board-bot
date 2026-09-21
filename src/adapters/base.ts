@@ -13,24 +13,53 @@ interface JsonOptions {
   method?: string;
   body?: string;
   headers?: Record<string, string>;
+  timeoutMs?: number;
 }
+
+const DEFAULT_TIMEOUT_MS = 15_000;
 
 function requestJson(url: string, opts?: JsonOptions): Promise<string> {
   return new Promise((resolve, reject) => {
+    const timeoutMs = opts?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     const isHttps = url.startsWith("https:");
     const fn = isHttps ? httpsRequest : httpRequest;
-    const req = fn(url, { method: opts?.method ?? "GET", headers: { "User-Agent": "InternshipJobBoardBot/1.0", ...(opts?.body ? { "Content-Type": "application/json" } : {}), ...(opts?.headers ?? {}) } }, (res) => {
-      let body = "";
-      if (res.statusCode && (res.statusCode < 200 || res.statusCode >= 300)) {
-        reject(new Error(`HTTP ${res.statusCode}: ${res.statusMessage}`));
-        res.resume();
-        return;
+    let settled = false;
+    const finish = (err?: Error, body?: string) => {
+      if (settled) return;
+      settled = true;
+      if (err) reject(err);
+      else resolve(body ?? "");
+    };
+
+    const req = fn(
+      url,
+      {
+        method: opts?.method ?? "GET",
+        timeout: timeoutMs,
+        headers: {
+          "User-Agent": "InternshipJobBoardBot/1.0",
+          ...(opts?.body ? { "Content-Type": "application/json" } : {}),
+          ...(opts?.headers ?? {}),
+        },
+      },
+      (res) => {
+        let body = "";
+        if (res.statusCode && (res.statusCode < 200 || res.statusCode >= 300)) {
+          finish(new Error(`HTTP ${res.statusCode}: ${res.statusMessage}`));
+          res.resume();
+          return;
+        }
+        res.setEncoding("utf8");
+        res.on("data", (chunk: string) => (body += chunk));
+        res.on("end", () => finish(undefined, body));
+        res.on("error", (err) => finish(err));
       }
-      res.setEncoding("utf8");
-      res.on("data", (chunk: string) => (body += chunk));
-      res.on("end", () => resolve(body));
+    );
+    req.setTimeout(timeoutMs, () => {
+      finish(new Error(`Request timed out after ${timeoutMs}ms`));
+      req.destroy();
     });
-    req.on("error", reject);
+    req.on("error", (err) => finish(err));
     if (opts?.body) req.write(opts.body);
     req.end();
   });

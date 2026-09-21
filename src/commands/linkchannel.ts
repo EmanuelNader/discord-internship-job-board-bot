@@ -1,8 +1,8 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder, PermissionFlagsBits, ChannelType } from "discord.js";
 import { prisma } from "@/db/client";
-import { roleFamilies } from "@/config/roles.config";
+import { getEnabledRoleFamilies } from "@/config/roles.config";
 
-const familyChoices = roleFamilies.map((f) => ({
+const familyChoices = getEnabledRoleFamilies().map((f) => ({
   name: f.family,
   value: f.family,
 }));

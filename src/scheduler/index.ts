@@ -1,7 +1,8 @@
 import type { SourceAdapter, RawPosting } from "@/lib/types";
 import { prisma } from "@/db/client";
-import { detectLevel, detectRoleFamily, detectRoleTitles, dedupHash, contentHash, isUsLocation } from "@/lib/normalize";
-import { isPostedOnOrAfter, startOfUtcDay } from "@/lib/freshness";
+import { detectLevel, detectRoleFamily, detectRoleTitles, dedupHash, contentHash, isUsLocation, atsUrlNeedle } from "@/lib/normalize";
+import { filterEnabledRoleFamilies } from "@/config/roles.config";
+import { isPostedOnOrAfter, sortNewestFirst, startOfUtcDay } from "@/lib/freshness";
 import { resolveAtsPublishedAt } from "@/lib/ats-published-at";
 
 export class SourcesManager {
@@ -48,7 +49,7 @@ export class SourcesManager {
     let lastError: string | null = null;
 
     try {
-      const rawPostings = await adapter.fetchNewPostings();
+      const rawPostings = sortNewestFirst(await adapter.fetchNewPostings());
 
       for (const raw of rawPostings) {
         const level = detectLevel(raw.title, raw);
@@ -62,7 +63,7 @@ export class SourcesManager {
           continue;
         }
 
-        const roleFamilies = detectRoleFamily(raw.title, raw);
+        const roleFamilies = filterEnabledRoleFamilies(detectRoleFamily(raw.title, raw));
         if (roleFamilies.length === 0) {
           droppedUnclassified++;
           continue;
@@ -70,10 +71,16 @@ export class SourcesManager {
 
         const roleTitles = detectRoleTitles(raw.title, roleFamilies, raw);
         const hash = dedupHash(adapter.name, raw.externalId ?? "", raw.title, raw.company);
-        const contentHashValue = contentHash(raw.title, raw.company);
+        const contentHashValue = contentHash(raw.title, raw.company, raw.url);
 
         // Check if this job content was already seen from another source
-        const existingByContent = await prisma.posting.findUnique({ where: { contentHash: contentHashValue } });
+        let existingByContent = await prisma.posting.findUnique({ where: { contentHash: contentHashValue } });
+        if (!existingByContent) {
+          const needle = atsUrlNeedle(raw.url);
+          if (needle) {
+            existingByContent = await prisma.posting.findFirst({ where: { url: { contains: needle } } });
+          }
+        }
         if (existingByContent) {
           droppedDuplicate++;
           continue;

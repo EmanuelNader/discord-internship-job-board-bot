@@ -1,7 +1,7 @@
 import { Client, TextChannel } from "discord.js";
 import { prisma } from "@/db/client";
 import { buildPostingEmbed } from "./embed";
-import { roleFamilies } from "@/config/roles.config";
+import { filterEnabledRoleFamilies, getEnabledRoleFamilies } from "@/config/roles.config";
 
 interface PostingToSend {
   title: string;
@@ -74,8 +74,11 @@ export class Poster {
   ): Promise<void> {
     const prismaImpl = this.prismaClient ?? prisma;
 
+    const roleFamilies = filterEnabledRoleFamilies(posting.roleFamily);
+    if (roleFamilies.length === 0) return;
+
     const channels = await prismaImpl.channelMap.findMany({
-      where: { kind: "job", roleFamily: { in: posting.roleFamily } },
+      where: { kind: "job", roleFamily: { in: roleFamilies } },
     });
 
     if (channels.length === 0) return;
@@ -83,8 +86,8 @@ export class Poster {
     const guild = this.client.guilds.cache.first(); // Single-guild: pings resolve on cache.first() only.
     const pingRoleIds: string[] = [];
     if (guild) {
-      for (const family of roleFamilies) {
-        if (!posting.roleFamily.includes(family.family)) continue;
+      for (const family of getEnabledRoleFamilies()) {
+        if (!roleFamilies.includes(family.family)) continue;
         const role = guild.roles.cache.find((r) => r.name === family.roleName);
         if (role) pingRoleIds.push(role.id);
       }

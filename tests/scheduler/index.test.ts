@@ -13,6 +13,7 @@ vi.mock("@/db/client", () => ({
     posting: {
       upsert: vi.fn(),
       findUnique: vi.fn(),
+      findFirst: vi.fn(),
       update: vi.fn(),
     },
     source: {
@@ -28,6 +29,7 @@ vi.mock("@/lib/normalize", () => ({
   dedupHash: mockDedupHash,
   contentHash: mockContentHash,
   isUsLocation: mockIsUsLocation,
+  atsUrlNeedle: () => null,
 }));
 
 vi.mock("@/lib/ats-published-at", () => ({
@@ -162,7 +164,7 @@ describe("SourcesManager", () => {
       },
     ]);
     mockDetectLevel.mockReturnValue("internship");
-    mockDetectRoleFamily.mockReturnValue(["engineering"]);
+    mockDetectRoleFamily.mockReturnValue(["electrical"]);
     mockDetectRoleTitles.mockReturnValue(["eng-electrical"]);
     mockDedupHash.mockReturnValue("hash123");
     mockContentHash.mockReturnValue("content-hash-123");

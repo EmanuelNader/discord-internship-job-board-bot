@@ -11,6 +11,7 @@ export interface RoleFamilyConfig {
   channelName: string;   // e.g., "swe-jobs"
   emoji: string;         // Unicode emoji for /onboard reaction roles
   roleName: string;     // Discord ping role (one per family)
+  enabled: boolean;     // false: skip channel/role provision, onboard, /role, and posting
   titles: RoleTitleConfig[];
 }
 
@@ -20,6 +21,7 @@ export const roleFamilies: RoleFamilyConfig[] = [
     channelName: "swe-jobs",
     emoji: "💻",
     roleName: "SWE",
+    enabled: true,
     titles: [
       { title: "swe-frontend", roleName: "SWE - Frontend", description: "Frontend engineering internships" },
       { title: "swe-backend", roleName: "SWE - Backend", description: "Backend engineering internships" },
@@ -34,6 +36,7 @@ export const roleFamilies: RoleFamilyConfig[] = [
     channelName: "pm-program-jobs",
     emoji: "📋",
     roleName: "PM",
+    enabled: true,
     titles: [
       { title: "pm-product", roleName: "PM - Product", description: "Product management internships" },
       { title: "pm-program", roleName: "PM - Program", description: "Program management internships" },
@@ -45,6 +48,7 @@ export const roleFamilies: RoleFamilyConfig[] = [
     channelName: "hardware-jobs",
     emoji: "🔌",
     roleName: "Hardware",
+    enabled: true,
     titles: [
       { title: "hw-silicon", roleName: "HW - Silicon", description: "Silicon/VLSI internships" },
       { title: "hw-pcb", roleName: "HW - PCB", description: "PCB design internships" },
@@ -57,6 +61,7 @@ export const roleFamilies: RoleFamilyConfig[] = [
     channelName: "data-jobs",
     emoji: "📊",
     roleName: "Data",
+    enabled: true,
     titles: [
       { title: "data-scientist", roleName: "Data - Scientist", description: "Data science internships" },
       { title: "data-engineer", roleName: "Data - Engineer", description: "Data engineering internships" },
@@ -68,6 +73,7 @@ export const roleFamilies: RoleFamilyConfig[] = [
     channelName: "ml-ai-jobs",
     emoji: "🤖",
     roleName: "ML",
+    enabled: true,
     titles: [
       { title: "ml-engineer", roleName: "ML - Engineer", description: "ML engineering internships" },
       { title: "ml-researcher", roleName: "ML - Researcher", description: "ML research internships" },
@@ -75,16 +81,53 @@ export const roleFamilies: RoleFamilyConfig[] = [
     ],
   },
   {
-    family: "engineering",
-    channelName: "engineering-jobs",
-    emoji: "⚙️",
-    roleName: "Engineering",
+    family: "civil-structural",
+    channelName: "civil-structural-jobs",
+    emoji: "🌉",
+    roleName: "Civil/Structural",
+    enabled: true,
     titles: [
       { title: "eng-structural", roleName: "Eng - Structural", description: "Structural engineering internships" },
       { title: "eng-civil", roleName: "Eng - Civil", description: "Civil engineering internships" },
-      { title: "eng-electrical", roleName: "Eng - Electrical", description: "Electrical engineering internships" },
+    ],
+  },
+  {
+    family: "mechanical",
+    channelName: "mechanical-jobs",
+    emoji: "⚙️",
+    roleName: "Mechanical",
+    enabled: true,
+    titles: [
       { title: "eng-mechanical", roleName: "Eng - Mechanical", description: "Mechanical engineering internships" },
+    ],
+  },
+  {
+    family: "electrical",
+    channelName: "electrical-jobs",
+    emoji: "⚡",
+    roleName: "Electrical",
+    enabled: true,
+    titles: [
+      { title: "eng-electrical", roleName: "Eng - Electrical", description: "Electrical engineering internships" },
+    ],
+  },
+  {
+    family: "chemical",
+    channelName: "chemical-jobs",
+    emoji: "🧪",
+    roleName: "Chemical",
+    enabled: true,
+    titles: [
       { title: "eng-chemical", roleName: "Eng - Chemical", description: "Chemical engineering internships" },
+    ],
+  },
+  {
+    family: "aerospace",
+    channelName: "aerospace-jobs",
+    emoji: "🚀",
+    roleName: "Aerospace",
+    enabled: true,
+    titles: [
       { title: "eng-aerospace", roleName: "Eng - Aerospace", description: "Aerospace engineering internships" },
     ],
   },
@@ -93,6 +136,7 @@ export const roleFamilies: RoleFamilyConfig[] = [
     channelName: "design-jobs",
     emoji: "🎨",
     roleName: "Design",
+    enabled: true,
     titles: [
       { title: "design-ux", roleName: "Design - UX", description: "UX design internships" },
       { title: "design-ui", roleName: "Design - UI", description: "UI design internships" },
@@ -105,6 +149,7 @@ export const roleFamilies: RoleFamilyConfig[] = [
     channelName: "growth-jobs",
     emoji: "📈",
     roleName: "Growth",
+    enabled: true,
     titles: [
       { title: "growth-general", roleName: "Growth - General", description: "General growth marketing internships" },
       { title: "growth-lifecycle", roleName: "Growth - Lifecycle", description: "Lifecycle marketing internships" },
@@ -112,3 +157,12 @@ export const roleFamilies: RoleFamilyConfig[] = [
     ],
   },
 ];
+
+export function getEnabledRoleFamilies(): RoleFamilyConfig[] {
+  return roleFamilies.filter((family) => family.enabled);
+}
+
+export function filterEnabledRoleFamilies(families: string[]): RoleFamily[] {
+  const enabled = new Set(getEnabledRoleFamilies().map((family) => family.family));
+  return families.filter((family): family is RoleFamily => enabled.has(family as RoleFamily));
+}

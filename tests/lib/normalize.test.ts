@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { detectLevel, detectRoleFamily, detectRoleTitles, dedupHash, isUsLocation } from "@/lib/normalize";
+import { detectLevel, detectRoleFamily, detectRoleTitles, dedupHash, contentHash, canonicalizeTitleForHash, isUsLocation } from "@/lib/normalize";
 
 describe("detectLevel", () => {
   describe("internship detection", () => {
@@ -236,13 +236,18 @@ describe("detectRoleFamily", () => {
     ["Machine Learning Engineer Intern", ["ml"], "ml engineer"],
     ["ML Researcher Co-op", ["ml"], "ml researcher"],
     ["AI Engineer Intern", ["ml"], "ai engineer"],
-    // Engineering (non-SWE)
-    ["Structural Engineering Intern", ["engineering"], "structural"],
-    ["Civil Engineer Co-op", ["engineering"], "civil"],
-    ["Electrical Engineering Intern", ["engineering"], "electrical"],
-    ["Mechanical Engineer Intern", ["engineering"], "mechanical"],
-    ["Chemical Engineering Intern", ["engineering"], "chemical"],
-    ["Aerospace Engineer Intern", ["engineering"], "aerospace"],
+    // Club engineering tracks (non-SWE)
+    ["Structural Engineering Intern", ["civil-structural"], "structural"],
+    ["Civil Engineer Co-op", ["civil-structural"], "civil"],
+    ["Civil and Structural Engineer Intern", ["civil-structural"], "civil+structural same family"],
+    ["Materials and Structures Intern", ["civil-structural"], "materials and structures"],
+    ["Materials & Structure Co-op", ["civil-structural"], "materials and structure"],
+    ["Construction Manager Intern", ["civil-structural"], "construction manager intern"],
+    ["Construction Management Internship", ["civil-structural"], "construction management internship"],
+    ["Electrical Engineering Intern", ["electrical"], "electrical"],
+    ["Mechanical Engineer Intern", ["mechanical"], "mechanical"],
+    ["Chemical Engineering Intern", ["chemical"], "chemical"],
+    ["Aerospace Engineer Intern", ["aerospace"], "aerospace"],
     // Design
     ["UX Designer Intern", ["design"], "ux"],
     ["UI Designer Co-op", ["design"], "ui"],
@@ -261,6 +266,13 @@ describe("detectRoleFamily", () => {
 
   it.each(cases)("title=%s -> %s (%s)", (title, expected, _label) => {
     expect(detectRoleFamily(title, { title, company: "Test", url: "http://x" })).toEqual(expected);
+  });
+
+  it("keeps software engineer on SWE only, not electrical", () => {
+    const raw = { title: "Software Engineer Intern", company: "Test", url: "http://x" };
+    expect(detectRoleFamily("Software Engineer Intern", raw)).toEqual(["swe"]);
+    expect(detectRoleFamily("Software Engineer Intern", raw)).not.toContain("electrical");
+    expect(detectRoleFamily("Software Engineering Intern", raw)).not.toContain("electrical");
   });
 });
 
@@ -293,13 +305,16 @@ describe("detectRoleTitles", () => {
     ["Machine Learning Engineer Intern", ["ml"], ["ml-engineer"], "ml engineer"],
     ["ML Researcher Co-op", ["ml"], ["ml-researcher"], "ml researcher"],
     ["AI Engineer Intern", ["ml"], ["ml-ai-eng"], "ai engineer"],
-    // Engineering
-    ["Structural Engineering Intern", ["engineering"], ["eng-structural"], "structural"],
-    ["Civil Engineer Co-op", ["engineering"], ["eng-civil"], "civil"],
-    ["Electrical Engineering Intern", ["engineering"], ["eng-electrical"], "electrical"],
-    ["Mechanical Engineer Intern", ["engineering"], ["eng-mechanical"], "mechanical"],
-    ["Chemical Engineering Intern", ["engineering"], ["eng-chemical"], "chemical"],
-    ["Aerospace Engineer Intern", ["engineering"], ["eng-aerospace"], "aerospace"],
+    // Club engineering tracks
+    ["Structural Engineering Intern", ["civil-structural"], ["eng-structural"], "structural"],
+    ["Civil Engineer Co-op", ["civil-structural"], ["eng-civil"], "civil"],
+    ["Civil Engineer / Structural Engineer Intern", ["civil-structural"], ["eng-structural", "eng-civil"], "civil+structural titles"],
+    ["Materials and Structures Intern", ["civil-structural"], ["eng-structural"], "materials and structures"],
+    ["Construction Manager Intern", ["civil-structural"], ["eng-civil"], "construction manager intern"],
+    ["Electrical Engineering Intern", ["electrical"], ["eng-electrical"], "electrical"],
+    ["Mechanical Engineer Intern", ["mechanical"], ["eng-mechanical"], "mechanical"],
+    ["Chemical Engineering Intern", ["chemical"], ["eng-chemical"], "chemical"],
+    ["Aerospace Engineer Intern", ["aerospace"], ["eng-aerospace"], "aerospace"],
     // Design
     ["UX Designer Intern", ["design"], ["design-ux"], "ux"],
     ["UI Designer Co-op", ["design"], ["design-ui"], "ui"],
@@ -342,6 +357,63 @@ describe("dedupHash", () => {
     const h1 = dedupHash("greenhouse", "12345", "Software Engineer Intern", "Google");
     const h2 = dedupHash("greenhouse", "12345", "Software Engineer Intern", "Microsoft");
     expect(h1).not.toBe(h2);
+  });
+});
+
+describe("contentHash", () => {
+  it("treats GitHub list titles and Greenhouse season titles as the same job", () => {
+    expect(canonicalizeTitleForHash("Software Engineer Intern (Summer 2027)")).toBe(
+      "software engineer intern"
+    );
+    expect(
+      contentHash("Software Engineer Intern", "Figma")
+    ).toBe(contentHash("Software Engineer Intern (Summer 2027)", "Figma"));
+  });
+
+  it("collapses the same Greenhouse job URL even when titles differ", () => {
+    const github = contentHash(
+      "Software Engineer Intern",
+      "Figma",
+      "https://job-boards.greenhouse.io/figma/jobs/4491234008"
+    );
+    const greenhouse = contentHash(
+      "Software Engineer Intern (Summer 2027)",
+      "Figma",
+      "https://boards.greenhouse.io/figma/jobs/4491234008"
+    );
+    expect(github).toBe(greenhouse);
+  });
+
+  it("keeps different companies distinct when there is no ATS URL", () => {
+    expect(contentHash("Software Engineer Intern", "Figma")).not.toBe(
+      contentHash("Software Engineer Intern", "Notion")
+    );
+  });
+
+  it("ignores list emojis, Inc, and SWE abbreviations", () => {
+    expect(contentHash("SWE Intern", "🔥 Figma")).toBe(
+      contentHash("Software Engineer Intern (Summer 2027)", "Figma, Inc.")
+    );
+  });
+
+  it("treats Anduril GitHub co-op rows as the Greenhouse season title", () => {
+    expect(canonicalizeTitleForHash("Winter 2027 Software Engineer Co-op")).toBe(
+      "software engineer coop"
+    );
+    expect(contentHash("Software Engineer Co-op", "Anduril")).toBe(
+      contentHash("Winter 2027 Software Engineer Co-op", "Anduril Industries")
+    );
+  });
+
+  it("collapses the same Workday requisition and Simplify job id", () => {
+    expect(
+      contentHash("Intern", "Nvidia", "https://nvidia.wd1.myworkdayjobs.com/en-US/site/job/Foo_JR12345")
+    ).toBe(
+      contentHash("Intern", "NVIDIA", "https://nvidia.wd1.myworkdayjobs.com/NVIDIAExternalCareerSite/job/Bar_JR12345?q=1")
+    );
+    expect(
+      contentHash("Intern", "Acme", "https://simplify.jobs/p/b887b47d")
+    ).toBe(contentHash("SWE Intern", "Acme", "https://simplify.jobs/p/b887b47d?utm=1"));
   });
 });
 

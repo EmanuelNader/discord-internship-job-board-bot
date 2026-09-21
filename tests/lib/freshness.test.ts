@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isPostedOnOrAfter, startOfUtcDay, utcDaysAgo } from "@/lib/freshness";
+import { isPostedOnOrAfter, sortNewestFirst, startOfUtcDay, utcDaysAgo } from "@/lib/freshness";
 
 describe("startOfUtcDay", () => {
   it("strips time to UTC midnight", () => {
@@ -30,5 +30,17 @@ describe("isPostedOnOrAfter", () => {
 
   it("drops a job with no published date", () => {
     expect(isPostedOnOrAfter(null, onboardDay)).toBe(false);
+  });
+});
+
+describe("sortNewestFirst", () => {
+  it("orders by publishedAt descending and keeps undated last", () => {
+    const sorted = sortNewestFirst([
+      { id: "old", publishedAt: "2026-09-10T00:00:00Z" },
+      { id: "none", publishedAt: null },
+      { id: "new", publishedAt: "2026-09-20T12:00:00Z" },
+      { id: "mid", publishedAt: "2026-09-15T00:00:00Z" },
+    ]);
+    expect(sorted.map((item) => item.id)).toEqual(["new", "mid", "old", "none"]);
   });
 });

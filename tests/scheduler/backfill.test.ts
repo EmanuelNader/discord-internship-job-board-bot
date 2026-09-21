@@ -13,6 +13,7 @@ vi.mock("@/db/client", () => ({
     posting: {
       upsert: vi.fn(),
       findUnique: vi.fn(),
+      findFirst: vi.fn(),
       update: vi.fn(),
     },
     source: {
@@ -28,6 +29,7 @@ vi.mock("@/lib/normalize", () => ({
   dedupHash: mockDedupHash,
   contentHash: mockContentHash,
   isUsLocation: mockIsUsLocation,
+  atsUrlNeedle: () => null,
 }));
 
 vi.mock("@/adapters", () => ({
@@ -175,6 +177,36 @@ describe("Backfill", () => {
     await runBackfill({ enabled: true, limitPerSource: 2 }, onNewPosting);
 
     expect(prisma.posting.upsert).toHaveBeenCalledTimes(2);
+  });
+
+  it("posts newest eligible listings first and applies the limit after sorting", async () => {
+    mockGetAllAdapters.mockReturnValue([
+      {
+        name: "test",
+        pollIntervalSec: 300,
+        fetchNewPostings: vi.fn().mockResolvedValue([
+          { title: "Intern Old", company: "Acme", location: "SF", url: "https://a.com/1", publishedAt: "2026-09-10T00:00:00Z", raw: {} },
+          { title: "Intern New", company: "Acme", location: "SF", url: "https://a.com/2", publishedAt: "2026-09-20T00:00:00Z", raw: {} },
+          { title: "Intern Mid", company: "Acme", location: "SF", url: "https://a.com/3", publishedAt: "2026-09-15T00:00:00Z", raw: {} },
+        ]),
+      },
+    ]);
+    mockDetectLevel.mockReturnValue("internship");
+    mockDetectRoleFamily.mockReturnValue(["swe"]);
+    mockDetectRoleTitles.mockReturnValue(["swe-frontend"]);
+    mockDedupHash.mockReturnValue("hash");
+    (prisma.posting.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    (prisma.posting.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 1 });
+
+    await runBackfill(
+      { enabled: true, limitPerSource: 2, liveSince: new Date("2026-09-01T00:00:00Z") },
+      onNewPosting
+    );
+
+    const titles = (prisma.posting.upsert as ReturnType<typeof vi.fn>).mock.calls.map(
+      (call) => call[0].create.title
+    );
+    expect(titles).toEqual(["Intern New", "Intern Mid"]);
   });
 
   it("skips non-internship postings", async () => {

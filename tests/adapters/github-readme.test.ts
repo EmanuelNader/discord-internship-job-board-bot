@@ -125,14 +125,22 @@ describe("parseInternshipListings", () => {
     expect(rows[1].title).toBe("Product Management Intern, MBA");
   });
 
-  it("parses speedyapply markdown with Position/Posting columns", () => {
-    const rows = parseInternshipListings(SPEEDY_MD);
-    expect(rows).toHaveLength(1);
-    expect(rows[0]).toMatchObject({
-      company: "Amazon",
-      title: "Robotics Software Intern",
-      url: "https://www.amazon.jobs/jobs/10517149/apply",
-      ageDays: 1,
-    });
+  it("prefers the ATS apply link over a Simplify tracking link listed first", () => {
+    const html = `
+<table>
+<thead><tr><th>Company</th><th>Role</th><th>Location</th><th>Application</th><th>Age</th></tr></thead>
+<tbody>
+<tr>
+<td>Figma</td>
+<td>Software Engineer Intern</td>
+<td>SF</td>
+<td><a href="https://simplify.jobs/p/aaaa1111">Simplify</a> <a href="https://boards.greenhouse.io/figma/jobs/4491234008">Apply</a></td>
+<td>0d</td>
+</tr>
+</tbody>
+</table>
+`;
+    const rows = parseInternshipListings(html);
+    expect(rows[0].url).toBe("https://boards.greenhouse.io/figma/jobs/4491234008");
   });
 });

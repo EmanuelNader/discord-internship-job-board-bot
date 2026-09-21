@@ -27,7 +27,11 @@ describe("onboard embed", () => {
     expect(embed.description).toMatch(/react/i);
     const fields = embed.fields ?? [];
     expect(fields.some((f) => /scrapes/i.test(f.name) && /GitHub/i.test(f.value))).toBe(true);
-    expect(fields.some((f) => /pings/i.test(f.name) && f.value.includes("💻"))).toBe(true);
+    const pings = fields.find((f) => /pings/i.test(f.name));
+    expect(pings?.value).toContain("💻");
+    expect(pings?.value).toContain("#civil-structural-jobs");
+    expect(pings?.value).toContain("#mechanical-jobs");
+    expect(pings?.value).not.toContain("#engineering-jobs");
   });
 });
 
@@ -70,7 +74,11 @@ describe("handleOnboardReaction", () => {
 
   it("maps family emojis", () => {
     expect(familyForEmoji("💻")?.family).toBe("swe");
-    expect(familyForEmoji("⚙️")?.family).toBe("engineering");
+    expect(familyForEmoji("🌉")?.family).toBe("civil-structural");
+    expect(familyForEmoji("⚙️")?.family).toBe("mechanical");
+    expect(familyForEmoji("⚡")?.family).toBe("electrical");
+    expect(familyForEmoji("🧪")?.family).toBe("chemical");
+    expect(familyForEmoji("🚀")?.family).toBe("aerospace");
     expect(familyForEmoji("nope")).toBeUndefined();
   });
 

@@ -1,10 +1,12 @@
 import { AutocompleteInteraction, ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
-import { roleFamilies } from "@/config/roles.config";
+import { getEnabledRoleFamilies } from "@/config/roles.config";
 
-const familyChoices = roleFamilies.map((f) => ({
-  name: f.roleName,
-  value: f.family,
-}));
+function familyChoices() {
+  return getEnabledRoleFamilies().map((f) => ({
+    name: f.roleName,
+    value: f.family,
+  }));
+}
 
 export const roleCommand = new SlashCommandBuilder()
   .setName("role")
@@ -31,7 +33,7 @@ export const unroleCommand = new SlashCommandBuilder()
 export async function handleRoleAutocomplete(interaction: AutocompleteInteraction): Promise<void> {
   const focused = interaction.options.getFocused(true);
   const query = focused.value.toLowerCase();
-  const choices = familyChoices
+  const choices = familyChoices()
     .filter((c) => c.name.toLowerCase().includes(query) || c.value.toLowerCase().includes(query))
     .slice(0, 25);
   await interaction.respond(choices);
@@ -39,7 +41,7 @@ export async function handleRoleAutocomplete(interaction: AutocompleteInteractio
 
 export async function handleRoleAdd(interaction: ChatInputCommandInteraction): Promise<void> {
   const familyId = interaction.options.getString("role", true);
-  const family = roleFamilies.find((f) => f.family === familyId);
+  const family = getEnabledRoleFamilies().find((f) => f.family === familyId);
   if (!family) {
     await interaction.reply({ content: "Unknown role.", ephemeral: true });
     return;
@@ -67,7 +69,7 @@ export async function handleRoleAdd(interaction: ChatInputCommandInteraction): P
 
 export async function handleRoleRemove(interaction: ChatInputCommandInteraction): Promise<void> {
   const familyId = interaction.options.getString("role", true);
-  const family = roleFamilies.find((f) => f.family === familyId);
+  const family = getEnabledRoleFamilies().find((f) => f.family === familyId);
   if (!family) {
     await interaction.reply({ content: "Unknown role.", ephemeral: true });
     return;

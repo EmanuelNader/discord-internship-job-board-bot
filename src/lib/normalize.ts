@@ -61,12 +61,22 @@ const FAMILY_KEYWORDS: Record<RoleFamily, RegExp[]> = {
     /\b(ml\s+researcher|machine\s+learning\s+research)\b/i,
     /\b(ai\s+engineer|artificial\s+intelligence\s+engineer)\b/i,
   ],
-  engineering: [
+  "civil-structural": [
     /\b(structural\s+engineer(?:ing)?)\b/i,
     /\b(civil\s+engineer(?:ing)?)\b/i,
-    /\b(electrical\s+engineer(?:ing)?)\b/i,
+    /\bmaterials\s*(?:and|&)\s*structures?\b/i,
+    /\bconstruction\s+manag(?:er|ement)\b/i,
+  ],
+  mechanical: [
     /\b(mechanical\s+engineer(?:ing)?)\b/i,
+  ],
+  electrical: [
+    /\b(electrical\s+engineer(?:ing)?)\b/i,
+  ],
+  chemical: [
     /\b(chemical\s+engineer(?:ing)?)\b/i,
+  ],
+  aerospace: [
     /\b(aerospace\s+engineer(?:ing)?)\b/i,
   ],
   design: [
@@ -123,12 +133,20 @@ const TITLE_KEYWORDS: Record<RoleFamily, Partial<Record<RoleTitle, RegExp>>> = {
     "ml-researcher": /\b(ml\s+researcher|machine\s+learning\s+research)\b/i,
     "ml-ai-eng": /\b(ai\s+engineer|artificial\s+intelligence\s+engineer)\b/i,
   },
-  engineering: {
-    "eng-structural": /\b(structural\s+engineer(?:ing)?)\b/i,
-    "eng-civil": /\b(civil\s+engineer(?:ing)?)\b/i,
-    "eng-electrical": /\b(electrical\s+engineer(?:ing)?)\b/i,
+  "civil-structural": {
+    "eng-structural": /\b(structural\s+engineer(?:ing)?|materials\s*(?:and|&)\s*structures?)\b/i,
+    "eng-civil": /\b(civil\s+engineer(?:ing)?|construction\s+manag(?:er|ement))\b/i,
+  },
+  mechanical: {
     "eng-mechanical": /\b(mechanical\s+engineer(?:ing)?)\b/i,
+  },
+  electrical: {
+    "eng-electrical": /\b(electrical\s+engineer(?:ing)?)\b/i,
+  },
+  chemical: {
     "eng-chemical": /\b(chemical\s+engineer(?:ing)?)\b/i,
+  },
+  aerospace: {
     "eng-aerospace": /\b(aerospace\s+engineer(?:ing)?)\b/i,
   },
   design: {
@@ -167,6 +185,74 @@ function normalizeForHash(s: string): string {
   return s.trim().replace(/\s+/g, " ").toLowerCase();
 }
 
+const SEASON_YEAR = String.raw`(summer|winter|fall|autumn|spring)\s+20\d{2}`;
+
+function stripEmoji(s: string): string {
+  return s.replace(/\p{Extended_Pictographic}/gu, "").replace(/[\uFE0F\u200D]/g, "");
+}
+
+export function canonicalizeCompanyForHash(company: string): string {
+  let s = stripEmoji(normalizeForHash(company));
+  s = s.replace(
+    /\b(incorporated|inc|llc|ltd|limited|corp|corporation|co|company|industries|industry|technologies|technology|labs|laboratory|the)\b\.?/g,
+    " "
+  );
+  s = s.replace(/[^a-z0-9\s]/g, " ");
+  return s.replace(/\s+/g, " ").trim();
+}
+
+/** Strip term/year wrappers so list titles match ATS titles. */
+export function canonicalizeTitleForHash(title: string): string {
+  let s = stripEmoji(normalizeForHash(title));
+  const yearSeason = String.raw`20\d{2}\s+(summer|winter|fall|autumn|spring)`;
+  s = s.replace(new RegExp(String.raw`\(\s*${SEASON_YEAR}\s*\)`, "gi"), " ");
+  s = s.replace(new RegExp(String.raw`\(\s*${yearSeason}\s*\)`, "gi"), " ");
+  s = s.replace(new RegExp(String.raw`^${SEASON_YEAR}\s*[-:–—]?\s*`, "i"), " ");
+  s = s.replace(new RegExp(String.raw`^${yearSeason}\s*[-:–—]?\s*`, "i"), " ");
+  s = s.replace(new RegExp(String.raw`[,.\-–—]\s*${SEASON_YEAR}\s*$`, "i"), " ");
+  s = s.replace(new RegExp(String.raw`\s+${SEASON_YEAR}\s*$`, "i"), " ");
+  s = s.replace(new RegExp(String.raw`\s+${SEASON_YEAR}\s+`, "gi"), " ");
+  s = s.replace(/\bswe\b/g, "software engineer");
+  s = s.replace(/\bsoftware engineering intern(?:ship)?\b/g, "software engineer intern");
+  s = s.replace(/\binternship\b/g, "intern");
+  s = s.replace(/\bfront[\s-]?end\b/g, "frontend");
+  s = s.replace(/\bback[\s-]?end\b/g, "backend");
+  s = s.replace(/\bfull[\s-]?stack\b/g, "fullstack");
+  s = s.replace(/\bco[\s-]?op\b/g, "coop");
+  return s.replace(/\s+/g, " ").trim();
+}
+
+export function canonicalAtsJobKey(url: string | null | undefined): string | null {
+  if (!url) return null;
+  const greenhouse = url.match(/greenhouse\.io\/([^/?#]+)\/jobs\/(\d+)/i);
+  if (greenhouse) return `greenhouse:${greenhouse[1].toLowerCase()}:${greenhouse[2]}`;
+  const lever = url.match(/lever\.co\/([^/?#]+)\/([0-9a-f-]{8,})/i);
+  if (lever) return `lever:${lever[1].toLowerCase()}:${lever[2].toLowerCase()}`;
+  const ashby = url.match(/ashbyhq\.com\/([^/?#]+)\/([0-9a-f-]{8,})/i);
+  if (ashby) return `ashby:${ashby[1].toLowerCase()}:${ashby[2].toLowerCase()}`;
+  const workday = url.match(/myworkdayjobs\.com\/[^?#]*?(?:_|\/)((?:JR|R)[-_]?\d{3,})/i);
+  if (workday) return `workday:${workday[1].toLowerCase().replace(/_/g, "")}`;
+  const simplify = url.match(/simplify\.jobs\/p\/([0-9a-f-]{8,})/i);
+  if (simplify) return `simplify:${simplify[1].toLowerCase()}`;
+  return null;
+}
+
+/** SQLite substring to find the same ATS job stored under an older contentHash. */
+export function atsUrlNeedle(url: string | null | undefined): string | null {
+  if (!url) return null;
+  const greenhouse = url.match(/greenhouse\.io\/([^/?#]+)\/jobs\/(\d+)/i);
+  if (greenhouse) return `/${greenhouse[1]}/jobs/${greenhouse[2]}`;
+  const lever = url.match(/lever\.co\/([^/?#]+)\/([0-9a-f-]{8,})/i);
+  if (lever) return `/${lever[1]}/${lever[2]}`;
+  const ashby = url.match(/ashbyhq\.com\/([^/?#]+)\/([0-9a-f-]{8,})/i);
+  if (ashby) return `/${ashby[1]}/${ashby[2]}`;
+  const workday = url.match(/myworkdayjobs\.com\/[^?#]*?(?:_|\/)((?:JR|R)[-_]?\d{3,})/i);
+  if (workday) return workday[1];
+  const simplify = url.match(/simplify\.jobs\/p\/([0-9a-f-]{8,})/i);
+  if (simplify) return `/p/${simplify[1]}`;
+  return null;
+}
+
 const US_STATES = /\b(AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY|DC)\b/;
 const US_INDICATORS = /\b(united\s+states|usa|u\.?s\.?a?)\b/i;
 const NON_US_COUNTRIES = /\b(canada|united\s+kingdom|uk|england|australia|india|germany|france|singapore|japan|china|brazil|mexico|netherlands|ireland|switzerland|sweden|spain|italy|finland|denmark|norway|belgium|austria|new\s+zealand|south\s+korea|hong\s+kong|taiwan|poland|israel|dubai|uae|emea|apac|europe|switzerland)\b/i;
@@ -199,8 +285,7 @@ export function dedupHash(
 }
 
 export function contentHash(title: string, company: string, url?: string): string {
-  const normTitle = normalizeForHash(title);
-  const normCompany = normalizeForHash(company);
-  const input = url ? `${normTitle}|${normCompany}|${url}` : `${normTitle}|${normCompany}`;
+  const atsKey = canonicalAtsJobKey(url);
+  const input = atsKey ?? `${canonicalizeTitleForHash(title)}|${canonicalizeCompanyForHash(company)}`;
   return createHash("sha256").update(input).digest("hex");
 }

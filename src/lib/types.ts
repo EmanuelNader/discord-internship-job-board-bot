@@ -1,6 +1,18 @@
 export type PostingKind = "job" | "event" | "direct-consideration" | "hackathon" | "ambassador";
 export type Level = "internship" | "co-op" | "fellowship";
-export type RoleFamily = "swe" | "pm-program" | "hardware" | "data" | "ml" | "engineering" | "design" | "growth";
+export type RoleFamily =
+  | "swe"
+  | "pm-program"
+  | "hardware"
+  | "data"
+  | "ml"
+  | "civil-structural"
+  | "mechanical"
+  | "electrical"
+  | "chemical"
+  | "aerospace"
+  | "design"
+  | "growth";
 export type RoleTitle =
   | "swe-frontend" | "swe-backend" | "swe-fullstack" | "swe-mobile" | "swe-devops" | "swe-embedded"
   | "pm-product" | "pm-program" | "pm-tpm"
