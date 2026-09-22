@@ -2,14 +2,14 @@ import type { Client } from "discord.js";
 import { prisma } from "@/db/client";
 import { Poster } from "@/poster/index";
 import { ensureLiveSince } from "@/lib/live-since";
-import { detectRoleFamily, detectRoleTitles } from "@/lib/normalize";
+import { detectRoleFamily, detectRoleTitles, isUsLocation } from "@/lib/normalize";
 import { filterEnabledRoleFamilies } from "@/config/roles.config";
 import { parseWorkdayPostedOn } from "@/lib/workday-posted";
 import type { RoleFamily } from "@/lib/types";
 
 const DEFAULT_SEED_LIMIT = 250;
-const ATS_SOURCES = ["workday", "greenhouse", "ashby", "lever"];
 const DEAD_FAMILIES = new Set(["engineering", "design", "growth"]);
+const CLUB_SEED_FAMILIES = new Set<RoleFamily>(["civil-structural", "chemical", "aerospace"]);
 
 function parseJsonArray(value: string): string[] {
   try {
@@ -22,8 +22,8 @@ function parseJsonArray(value: string): string[] {
 
 function listingFamilies(title: string, stored: string[]): RoleFamily[] {
   const enabled = filterEnabledRoleFamilies(stored);
-  if (enabled.length > 0) return enabled;
-  return detectRoleFamily(title);
+  const detected = enabled.length > 0 ? enabled : detectRoleFamily(title);
+  return detected.filter((family) => CLUB_SEED_FAMILIES.has(family));
 }
 
 function listingTime(row: {
@@ -45,13 +45,13 @@ function listingTime(row: {
 }
 
 /**
- * Send jobs into the current channel map, oldest first.
- * Remaps leftover engineering/design/growth tags. Skips rows already delivered
- * to a mapped channel.
+ * Send civil / chemical / aerospace internships, oldest first.
+ * Remaps leftover engineering tags. Skips non-US rows and rows already
+ * delivered to a mapped channel.
  */
 export async function seedRecentPostings(
   send: Poster["send"],
-  liveSince: Date,
+  _liveSince: Date,
   limit = DEFAULT_SEED_LIMIT
 ): Promise<{ sent: number; skipped: number }> {
   const mapped = await prisma.channelMap.findMany({ where: { kind: "job" } });
@@ -62,12 +62,10 @@ export async function seedRecentPostings(
     where: {
       kind: "job",
       OR: [
-        { sourceName: { in: ATS_SOURCES } },
+        { roleFamily: { contains: "civil-structural" } },
+        { roleFamily: { contains: "chemical" } },
+        { roleFamily: { contains: "aerospace" } },
         { roleFamily: { contains: "engineering" } },
-        { roleFamily: { contains: "\"design\"" } },
-        { roleFamily: { contains: "\"growth\"" } },
-        { publishedAt: { gte: liveSince } },
-        { AND: [{ publishedAt: null }, { firstSeenAt: { gte: liveSince } }] },
       ],
     },
   });
@@ -85,6 +83,10 @@ export async function seedRecentPostings(
       already = [];
     }
     if (already.some((id) => mappedIds.has(id))) {
+      skipped++;
+      continue;
+    }
+    if (!isUsLocation(row.location)) {
       skipped++;
       continue;
     }

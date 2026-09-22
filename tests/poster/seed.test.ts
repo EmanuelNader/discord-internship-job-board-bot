@@ -21,20 +21,20 @@ describe("seedRecentPostings", () => {
     send.mockResolvedValue(undefined);
   });
 
-  it("sends recent jobs that were never delivered to the current channel map", async () => {
-    mockFindManyMap.mockResolvedValue([{ kind: "job", roleFamily: "swe", channelId: "theta_swe" }]);
+  it("sends club-major jobs that were never delivered to the current channel map", async () => {
+    mockFindManyMap.mockResolvedValue([{ kind: "job", roleFamily: "chemical", channelId: "theta_chem" }]);
     mockFindManyPosting.mockResolvedValue([
       {
         dedupHash: "h1",
-        title: "SWE Intern",
-        company: "Acme",
-        location: "SF",
+        title: "Chemical Engineering Intern",
+        company: "Motiva",
+        location: "Port Arthur, TX",
         url: "https://a.com",
         level: "internship",
-        sourceName: "greenhouse",
-        roleFamily: JSON.stringify(["swe"]),
-        roleTitles: JSON.stringify(["swe-frontend"]),
-        publishedAt: new Date("2026-09-18"),
+        sourceName: "workday",
+        roleFamily: JSON.stringify(["chemical"]),
+        roleTitles: JSON.stringify(["eng-chemical"]),
+        publishedAt: new Date("2026-08-23"),
         channelIds: JSON.stringify(["old_ay_channel"]),
       },
     ]);
@@ -43,26 +43,26 @@ describe("seedRecentPostings", () => {
 
     expect(result).toEqual({ sent: 1, skipped: 0 });
     expect(send).toHaveBeenCalledWith(
-      expect.objectContaining({ title: "SWE Intern", company: "Acme" }),
+      expect.objectContaining({ title: "Chemical Engineering Intern", company: "Motiva" }),
       "h1"
     );
   });
 
   it("skips jobs already delivered to a mapped channel", async () => {
-    mockFindManyMap.mockResolvedValue([{ kind: "job", roleFamily: "swe", channelId: "theta_swe" }]);
+    mockFindManyMap.mockResolvedValue([{ kind: "job", roleFamily: "chemical", channelId: "theta_chem" }]);
     mockFindManyPosting.mockResolvedValue([
       {
         dedupHash: "h1",
-        title: "SWE Intern",
+        title: "Chemical Engineering Intern",
         company: "Acme",
         location: "SF",
         url: "https://a.com",
         level: "internship",
-        sourceName: "greenhouse",
-        roleFamily: JSON.stringify(["swe"]),
-        roleTitles: JSON.stringify(["swe-frontend"]),
+        sourceName: "workday",
+        roleFamily: JSON.stringify(["chemical"]),
+        roleTitles: JSON.stringify(["eng-chemical"]),
         publishedAt: new Date("2026-09-18"),
-        channelIds: JSON.stringify(["theta_swe"]),
+        channelIds: JSON.stringify(["theta_chem"]),
       },
     ]);
 
@@ -72,19 +72,19 @@ describe("seedRecentPostings", () => {
     expect(send).not.toHaveBeenCalled();
   });
 
-  it("sends undated Workday internships that never reached Discord", async () => {
-    mockFindManyMap.mockResolvedValue([{ kind: "job", roleFamily: "mechanical", channelId: "theta_mech" }]);
+  it("sends undated Workday club internships that never reached Discord", async () => {
+    mockFindManyMap.mockResolvedValue([{ kind: "job", roleFamily: "aerospace", channelId: "theta_aero" }]);
     mockFindManyPosting.mockResolvedValue([
       {
         dedupHash: "wd1",
-        title: "Mechanical Engineering Intern (Summer 2027)",
-        company: "RTX",
-        location: "Tucson, AZ",
+        title: "Systems Engineering Intern - Mechanical/Aerospace Engineering",
+        company: "GE Aerospace",
+        location: "Dayton, OH",
         url: "https://workday.example/job",
         level: "internship",
         sourceName: "workday",
-        roleFamily: JSON.stringify(["mechanical"]),
-        roleTitles: JSON.stringify(["eng-mechanical"]),
+        roleFamily: JSON.stringify(["aerospace"]),
+        roleTitles: JSON.stringify(["eng-aerospace"]),
         publishedAt: null,
         firstSeenAt: new Date("2026-09-21"),
         channelIds: null,
@@ -95,9 +95,56 @@ describe("seedRecentPostings", () => {
 
     expect(result).toEqual({ sent: 1, skipped: 0 });
     expect(send).toHaveBeenCalledWith(
-      expect.objectContaining({ title: "Mechanical Engineering Intern (Summer 2027)", company: "RTX" }),
+      expect.objectContaining({
+        title: "Systems Engineering Intern - Mechanical/Aerospace Engineering",
+        company: "GE Aerospace",
+      }),
       "wd1"
     );
+  });
+
+  it("skips leftover mechanical/electrical engineering and Canada listings", async () => {
+    mockFindManyMap.mockResolvedValue([
+      { kind: "job", roleFamily: "aerospace", channelId: "theta_aero" },
+      { kind: "job", roleFamily: "electrical", channelId: "theta_ee" },
+    ]);
+    mockFindManyPosting.mockResolvedValue([
+      {
+        dedupHash: "ee",
+        title: "Electrical Engineer Intern",
+        company: "RTX",
+        location: "Tucson, AZ",
+        url: "https://a.com/ee",
+        level: "internship",
+        sourceName: "workday",
+        roleFamily: JSON.stringify(["engineering"]),
+        roleTitles: JSON.stringify(["eng-electrical"]),
+        publishedAt: new Date("2026-09-18"),
+        firstSeenAt: new Date("2026-09-21"),
+        channelIds: null,
+        raw: null,
+      },
+      {
+        dedupHash: "ca",
+        title: "Internship - Winter 2027 - Aerospace Manufacturing",
+        company: "RTX",
+        location: "CA-NS-HALIFAX-PLANT 41 ~ 189 Pratt & Whitney Dr ~ PLANT 41",
+        url: "https://a.com/ca",
+        level: "internship",
+        sourceName: "workday",
+        roleFamily: JSON.stringify(["engineering"]),
+        roleTitles: JSON.stringify(["eng-aerospace"]),
+        publishedAt: new Date("2026-09-06"),
+        firstSeenAt: new Date("2026-09-21"),
+        channelIds: null,
+        raw: null,
+      },
+    ]);
+
+    const result = await seedRecentPostings(send, new Date("2026-09-14"));
+
+    expect(result).toEqual({ sent: 0, skipped: 2 });
+    expect(send).not.toHaveBeenCalled();
   });
 
   it("posts oldest first and remaps leftover engineering tags", async () => {

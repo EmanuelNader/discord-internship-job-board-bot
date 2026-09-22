@@ -252,8 +252,9 @@ export function atsUrlNeedle(url: string | null | undefined): string | null {
 
 const US_STATES = /\b(AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY|DC)\b/;
 const US_INDICATORS = /\b(united\s+states|usa|u\.?s\.?a?)\b/i;
+const CANADA_WORKDAY = /\bCA-(NS|ON|BC|QC|AB|MB|SK|NB|NL|PE|YT|NT|NU)\b/i;
 const NON_US_COUNTRIES = /\b(canada|united\s+kingdom|uk|england|australia|india|germany|france|singapore|japan|china|brazil|mexico|netherlands|ireland|switzerland|sweden|spain|italy|finland|denmark|norway|belgium|austria|new\s+zealand|south\s+korea|hong\s+kong|taiwan|poland|israel|dubai|uae|emea|apac|europe|switzerland)\b/i;
-const NON_US_CITIES = /\b(london|sydney|toronto|vancouver|berlin|paris|tokyo|shanghai|beijing|dublin|amsterdam|zurich|stockholm|bangalore|mumbai|melbourne|hong\s+kong|singapore|mexico\s+city|sao\s+paulo)\b/i;
+const NON_US_CITIES = /\b(london|sydney|toronto|vancouver|halifax|ottawa|montreal|calgary|edmonton|berlin|paris|tokyo|shanghai|beijing|dublin|amsterdam|zurich|stockholm|bangalore|mumbai|melbourne|hong\s+kong|singapore|mexico\s+city|sao\s+paulo)\b/i;
 
 export function isUsLocation(location: string | null | undefined): boolean {
   if (location == null) return true;
@@ -261,9 +262,11 @@ export function isUsLocation(location: string | null | undefined): boolean {
   const loc = location.trim();
   if (!loc) return true;
 
+  // Workday Canada codes look like CA-NS-HALIFAX; check before \bCA\b (California).
+  if (CANADA_WORKDAY.test(loc) || NON_US_COUNTRIES.test(loc) || NON_US_CITIES.test(loc)) {
+    return false;
+  }
   if (US_STATES.test(loc) || US_INDICATORS.test(loc)) return true;
-  if (NON_US_COUNTRIES.test(loc)) return false;
-  if (NON_US_CITIES.test(loc)) return false;
 
   return true;
 }

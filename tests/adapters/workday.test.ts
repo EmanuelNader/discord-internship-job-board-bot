@@ -14,6 +14,7 @@ function nockWorkdayEmpty(exceptHostSite: string[] = []) {
     const key = `${board.host}/${board.site}`;
     if (exceptHostSite.includes(key)) continue;
     nock(`https://${board.host}`)
+      .persist()
       .post(cxsPath(board))
       .reply(200, { jobPostings: [], total: 0 });
   }
@@ -51,7 +52,7 @@ describe("Workday Adapter", () => {
 
     nock(`https://${nvidia.host}`).post(cxsPath(nvidia)).reply(200, page1);
     nock(`https://${nvidia.host}`).post(cxsPath(nvidia)).reply(200, page2);
-    nockWorkdayEmpty([`${nvidia.host}/${nvidia.site}`]);
+    nockWorkdayEmpty();
 
     const postings = await adapter.fetchNewPostings();
     expect(postings).toHaveLength(2);
@@ -75,7 +76,7 @@ describe("Workday Adapter", () => {
       ],
       total: 1,
     });
-    nockWorkdayEmpty([`${nvidia.host}/${nvidia.site}`]);
+    nockWorkdayEmpty();
 
     const postings = await adapter.fetchNewPostings();
     expect(postings).toHaveLength(1);
@@ -95,7 +96,7 @@ describe("Workday Adapter", () => {
       ],
       total: 1,
     });
-    nockWorkdayEmpty([`${nvidia.host}/${nvidia.site}`]);
+    nockWorkdayEmpty();
 
     const postings = await adapter.fetchNewPostings();
     expect(postings).toHaveLength(1);
@@ -104,7 +105,7 @@ describe("Workday Adapter", () => {
 
   it("isolates a single board failure", async () => {
     nock(`https://${nvidia.host}`).post(cxsPath(nvidia)).replyWithError("ECONNREFUSED");
-    nockWorkdayEmpty([`${nvidia.host}/${nvidia.site}`]);
+    nockWorkdayEmpty();
 
     const postings = await adapter.fetchNewPostings();
     expect(postings).toHaveLength(0);
@@ -116,5 +117,46 @@ describe("Workday Adapter", () => {
     }
 
     await expect(adapter.fetchNewPostings()).rejects.toThrow(/workday/i);
+  });
+
+  it("searches intern/co-op instead of the full catalog", async () => {
+    const bodies: Array<{ searchText?: string }> = [];
+    nock(`https://${nvidia.host}`)
+      .post(cxsPath(nvidia), (body: { searchText?: string }) => {
+        bodies.push(body);
+        return true;
+      })
+      .times(2)
+      .reply(200, { jobPostings: [], total: 0 });
+    nockWorkdayEmpty();
+
+    await adapter.fetchNewPostings();
+    expect(bodies.map((b) => b.searchText)).toEqual(["intern", "co-op"]);
+  });
+
+  it("stops paging a huge Workday catalog", async () => {
+    let pages = 0;
+    nock(`https://${nvidia.host}`)
+      .persist()
+      .post(cxsPath(nvidia), () => {
+        pages += 1;
+        return true;
+      })
+      .reply(200, {
+        jobPostings: [
+          {
+            title: "Hardware Engineering Intern",
+            locationsText: "Santa Clara, CA",
+            externalPath: "/job/Hardware-Engineering-Intern_JR123",
+            bulletFields: ["JR123"],
+          },
+        ],
+        total: 10_000,
+      });
+    nockWorkdayEmpty([`${nvidia.host}/${nvidia.site}`]);
+
+    const postings = await adapter.fetchNewPostings();
+    expect(pages).toBe(10);
+    expect(postings).toHaveLength(1);
   });
 });

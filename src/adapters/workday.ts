@@ -30,43 +30,47 @@ export function createWorkdayAdapter(): SourceAdapter {
         "workday",
         boards,
         async (board) => {
-          const postings: RawPosting[] = [];
+          const byId = new Map<string, RawPosting>();
           const pageSize = 20;
-          let offset = 0;
-          let total = Infinity;
+          const maxPages = 5;
+          const searches = ["intern", "co-op"];
 
-          while (offset < total) {
-            const data = await fetchJson<WorkdayResponse>(
-              `https://${board.host}/wday/cxs/${board.tenant}/${board.site}/jobs`,
-              {
-                method: "POST",
-                body: JSON.stringify({
-                  appliedFacets: {},
-                  limit: pageSize,
-                  offset,
-                  searchText: "",
-                }),
+          for (const searchText of searches) {
+            let offset = 0;
+            for (let page = 0; page < maxPages; page++) {
+              const data = await fetchJson<WorkdayResponse>(
+                `https://${board.host}/wday/cxs/${board.tenant}/${board.site}/jobs`,
+                {
+                  method: "POST",
+                  body: JSON.stringify({
+                    appliedFacets: {},
+                    limit: pageSize,
+                    offset,
+                    searchText,
+                  }),
+                }
+              );
+              const jobs = data.jobPostings ?? [];
+              for (const job of jobs) {
+                if (!job.title?.trim()) continue;
+                const jobId = job.bulletFields?.[0] ?? job.externalPath;
+                if (byId.has(jobId)) continue;
+                byId.set(jobId, {
+                  title: job.title,
+                  company: board.name,
+                  location: job.locationsText ?? null,
+                  url: `https://${board.host}/${board.site}${job.externalPath}`,
+                  externalId: jobId,
+                  publishedAt: workdayPostedAt(job),
+                  raw: job as unknown as Record<string, unknown>,
+                });
               }
-            );
-            const jobs = data.jobPostings ?? [];
-            total = data.total ?? jobs.length;
-            for (const job of jobs) {
-              if (!job.title?.trim()) continue;
-              const jobId = job.bulletFields?.[0] ?? job.externalPath;
-              postings.push({
-                title: job.title,
-                company: board.name,
-                location: job.locationsText ?? null,
-                url: `https://${board.host}/${board.site}${job.externalPath}`,
-                externalId: jobId,
-                publishedAt: workdayPostedAt(job),
-                raw: job as unknown as Record<string, unknown>,
-              });
+              if (jobs.length === 0) break;
+              offset += jobs.length;
+              if (offset >= (data.total ?? jobs.length)) break;
             }
-            if (jobs.length === 0) break;
-            offset += jobs.length;
           }
-          return postings;
+          return [...byId.values()];
         },
         (board) => board.name
       );

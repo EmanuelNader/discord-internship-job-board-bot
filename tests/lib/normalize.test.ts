@@ -470,4 +470,13 @@ describe("isUsLocation", () => {
     expect(isUsLocation("San Francisco")).toBe(true);
     expect(isUsLocation("New York City")).toBe(true);
   });
+
+  it("returns false for Workday Canada site codes that contain CA", () => {
+    expect(
+      isUsLocation("CA-NS-HALIFAX-PLANT 41 ~ 189 Pratt & Whitney Dr ~ PLANT 41")
+    ).toBe(false);
+    expect(isUsLocation("Halifax, NS")).toBe(false);
+    expect(isUsLocation("Anaheim, CA, USA")).toBe(true);
+    expect(isUsLocation("US-ND-JAMESTOWN-P1")).toBe(true);
+  });
 });
