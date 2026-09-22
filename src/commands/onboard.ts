@@ -23,6 +23,7 @@ function sourceBlurb(): string {
     ashby: "Ashby boards (Notion, OpenAI, Cursor, and others)",
     lever: "Lever boards (Palantir, Spotify, Zoox, Belvedere)",
     workday: "Workday (Boeing, GE Aerospace, Baker Hughes, Dow, Caterpillar, RTX, and others)",
+    icims: "iCIMS (Kimley-Horn, Dewberry, Sargent & Lundy, GD Mission Systems, and other non-tech engineering boards)",
   };
   return enabled
     .filter((name) => labels[name])

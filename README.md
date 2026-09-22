@@ -1,6 +1,6 @@
 # Engineering Internship Job Board Bot
 
-Self-hosted Discord bot that watches public intern lists and company career pages, keeps **US intern / co-op / fellowship** roles, and posts each new listing into a role-family channel (SWE, PM, Hardware, Data, ML, Civil/Structural, Mechanical, Electrical, Chemical, Aerospace, Other). Members react on the `/onboard` panel (or use `/role`) to get pinged.
+Self-hosted Discord bot that watches public intern lists and company career pages (Greenhouse, Ashby, Lever, Workday, **iCIMS**, and GitHub READMEs), keeps **US intern / co-op / fellowship** roles, and posts each new listing into a role-family channel (SWE, PM, Hardware, Data, ML, Civil/Structural, Mechanical, Electrical, Chemical, Aerospace, Other). Members react on the `/onboard` panel (or use `/role`) to get pinged. Covers both tech and traditional engineering majors.
 
 This is **not** a public bot you invite from a directory. Clone the repo, create your own Discord application, and run it on a machine that stays on.
 
@@ -70,10 +70,10 @@ Only **US intern / co-op / fellowship** rows are posted. Defaults live in [`src/
 | Source | What | On |
 | --- | --- | --- |
 | GitHub intern lists | README tables (many companies beyond the ATS boards) | yes |
-| Greenhouse | Company career boards | yes (55) |
+| Greenhouse | Company career boards | yes (56) |
 | Ashby | Company career boards | yes (51) |
 | Lever | Company career boards | yes (4) |
-| Workday | Company career boards | yes (15) |
+| Workday | Company career boards | yes (22) |
 | iCIMS | Non-tech engineering career boards | yes (8) |
 | Simplify HTML | Job-board HTML scrape | no |
 | Custom ATS | Amazon, Microsoft, Meta, Apple, Google, Netflix, Oracle, LinkedIn, ByteDance | no (stub) |
@@ -143,10 +143,23 @@ Only **US intern / co-op / fellowship** rows are posted. Defaults live in [`src/
 | | | |
 | :--- | :--- | :--- |
 | 3M | Abbott | Adobe |
-| Applied Materials | Blue Origin | Caterpillar |
-| Chevron | Disney | DuPont |
+| Applied Materials | Baker Hughes | Blue Origin |
+| Boeing | Caterpillar | Chevron |
+| Disney | Dow | DuPont |
+| GE Aerospace | Marathon Petroleum | Motiva |
 | NVIDIA | PayPal | Qualcomm |
 | RTX | Salesforce | Slack |
+| Williams | | |
+
+### iCIMS (non-tech engineering)
+
+Curated allowlist — intern/co-op search only, title-filtered:
+
+| | | |
+| :--- | :--- | :--- |
+| Kimley-Horn | Dewberry | CEC |
+| KCI | RS&H | GFT |
+| Sargent & Lundy | GD Mission Systems | |
 
 ## Config
 
@@ -158,19 +171,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) to add a company. Report vulnerabilities 
 ## License
 
 MIT. See [LICENSE](LICENSE).
-
-### iCIMS (non-tech engineering)
-
-Curated allowlist — intern/co-op search only, title-filtered:
-
-| Company | Host |
-| --- | --- |
-| Kimley-Horn | `careers-kimley-horn.icims.com` |
-| Dewberry | `careers-dewberry.icims.com` |
-| CEC | `careers-cecinc.icims.com` |
-| KCI | `careers-kci.icims.com` |
-| RS&H | `careers-rsandh.icims.com` |
-| GFT | `careers-gannettfleming.icims.com` |
-| Sargent & Lundy | `careers-sargentlundy.icims.com` |
-| GD Mission Systems | `careers-gdms.icims.com` |
 
