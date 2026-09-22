@@ -2,13 +2,52 @@ import type { Client } from "discord.js";
 import { prisma } from "@/db/client";
 import { Poster } from "@/poster/index";
 import { ensureLiveSince } from "@/lib/live-since";
+import { detectRoleFamily, detectRoleTitles } from "@/lib/normalize";
+import { filterEnabledRoleFamilies } from "@/config/roles.config";
+import { parseWorkdayPostedOn } from "@/lib/workday-posted";
+import type { RoleFamily } from "@/lib/types";
 
-const DEFAULT_SEED_LIMIT = 200;
+const DEFAULT_SEED_LIMIT = 250;
+const ATS_SOURCES = ["workday", "greenhouse", "ashby", "lever"];
+const DEAD_FAMILIES = new Set(["engineering", "design", "growth"]);
+
+function parseJsonArray(value: string): string[] {
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    return Array.isArray(parsed) ? parsed.map(String) : [];
+  } catch {
+    return [];
+  }
+}
+
+function listingFamilies(title: string, stored: string[]): RoleFamily[] {
+  const enabled = filterEnabledRoleFamilies(stored);
+  if (enabled.length > 0) return enabled;
+  return detectRoleFamily(title);
+}
+
+function listingTime(row: {
+  publishedAt: Date | null;
+  firstSeenAt: Date;
+  raw: string | null;
+}): number {
+  if (row.publishedAt) return row.publishedAt.getTime();
+  if (row.raw) {
+    try {
+      const raw = JSON.parse(row.raw) as { postedOn?: string; postedDate?: string };
+      const parsed = parseWorkdayPostedOn(raw.postedOn ?? raw.postedDate);
+      if (parsed) return parsed.getTime();
+    } catch {
+      // ignore malformed raw
+    }
+  }
+  return row.firstSeenAt.getTime();
+}
 
 /**
- * Send recent DB jobs into the current channel map.
- * Skips a row if it was already delivered to one of those channels, so a later
- * /onboard (new server) still seeds, but a restart does not dump duplicates.
+ * Send jobs into the current channel map, oldest first.
+ * Remaps leftover engineering/design/growth tags. Skips rows already delivered
+ * to a mapped channel.
  */
 export async function seedRecentPostings(
   send: Poster["send"],
@@ -23,13 +62,17 @@ export async function seedRecentPostings(
     where: {
       kind: "job",
       OR: [
+        { sourceName: { in: ATS_SOURCES } },
+        { roleFamily: { contains: "engineering" } },
+        { roleFamily: { contains: "\"design\"" } },
+        { roleFamily: { contains: "\"growth\"" } },
         { publishedAt: { gte: liveSince } },
         { AND: [{ publishedAt: null }, { firstSeenAt: { gte: liveSince } }] },
       ],
     },
-    orderBy: [{ publishedAt: "desc" }, { firstSeenAt: "desc" }],
-    take: limit,
   });
+
+  rows.sort((a, b) => listingTime(a) - listingTime(b));
 
   let sent = 0;
   let skipped = 0;
@@ -46,14 +89,23 @@ export async function seedRecentPostings(
       continue;
     }
 
-    let roleFamily: string[] = [];
-    let roleTitles: string[] = [];
-    try {
-      roleFamily = JSON.parse(row.roleFamily) as string[];
-      roleTitles = JSON.parse(row.roleTitles) as string[];
-    } catch {
+    const storedFamilies = parseJsonArray(row.roleFamily);
+    const roleFamily = listingFamilies(row.title, storedFamilies);
+    if (roleFamily.length === 0) {
       skipped++;
       continue;
+    }
+    if (sent >= limit) break;
+    const roleTitles = detectRoleTitles(row.title, roleFamily);
+
+    if (storedFamilies.some((family) => DEAD_FAMILIES.has(family))) {
+      await prisma.posting.update({
+        where: { dedupHash: row.dedupHash },
+        data: {
+          roleFamily: JSON.stringify(roleFamily),
+          roleTitles: JSON.stringify(roleTitles),
+        },
+      });
     }
 
     await send(
@@ -66,7 +118,7 @@ export async function seedRecentPostings(
         sourceName: row.sourceName,
         roleFamily,
         roleTitles,
-        postedAt: row.publishedAt ?? undefined,
+        postedAt: row.publishedAt ?? new Date(listingTime(row)),
       },
       row.dedupHash
     );
@@ -80,9 +132,7 @@ export async function seedRecentPostingsForGuild(client: Client, guildId: string
   const liveSince = await ensureLiveSince(guildId, new Date());
   const poster = new Poster(client, prisma);
   try {
-    console.log(
-      `Seeding jobs published on or after ${liveSince.toISOString().slice(0, 10)} into mapped channels...`
-    );
+    console.log("Seeding undelivered internships into mapped channels, oldest first...");
     const result = await seedRecentPostings(poster.send.bind(poster), liveSince);
     console.log(`Seeded ${result.sent} jobs (${result.skipped} already in mapped channels)`);
   } finally {

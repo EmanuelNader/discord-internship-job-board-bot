@@ -2,7 +2,7 @@ import type { SourceAdapter, RawPosting } from "@/lib/types";
 import { prisma } from "@/db/client";
 import { detectLevel, detectRoleFamily, detectRoleTitles, dedupHash, contentHash, isUsLocation, atsUrlNeedle } from "@/lib/normalize";
 import { filterEnabledRoleFamilies } from "@/config/roles.config";
-import { isPostedOnOrAfter, sortNewestFirst, startOfUtcDay } from "@/lib/freshness";
+import { isFreshForDiscord, sortNewestFirst, startOfUtcDay } from "@/lib/freshness";
 import { resolveAtsPublishedAt } from "@/lib/ats-published-at";
 
 export class SourcesManager {
@@ -87,7 +87,7 @@ export class SourcesManager {
         }
 
         const publishedAt = raw.publishedAt ? new Date(raw.publishedAt) : null;
-        const fresh = isPostedOnOrAfter(publishedAt, this.liveSince);
+        const fresh = isFreshForDiscord(publishedAt, this.liveSince, adapter.name);
 
         await prisma.posting.upsert({
           where: { dedupHash: hash },
@@ -113,7 +113,7 @@ export class SourcesManager {
 
         const existing = await prisma.posting.findUnique({ where: { dedupHash: hash } });
         if (existing && !existing.postedAt) {
-          if (!isPostedOnOrAfter(existing.publishedAt, this.liveSince)) {
+          if (!isFreshForDiscord(existing.publishedAt, this.liveSince, adapter.name)) {
             await prisma.posting.update({
               where: { dedupHash: hash },
               data: { postedAt: new Date() },

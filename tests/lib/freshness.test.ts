@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isPostedOnOrAfter, sortNewestFirst, startOfUtcDay, utcDaysAgo } from "@/lib/freshness";
+import { isPostedOnOrAfter, isFreshForDiscord, sortNewestFirst, startOfUtcDay, utcDaysAgo } from "@/lib/freshness";
 
 describe("startOfUtcDay", () => {
   it("strips time to UTC midnight", () => {
@@ -30,6 +30,29 @@ describe("isPostedOnOrAfter", () => {
 
   it("drops a job with no published date", () => {
     expect(isPostedOnOrAfter(null, onboardDay)).toBe(false);
+  });
+});
+
+describe("isFreshForDiscord", () => {
+  const onboardDay = new Date("2026-09-02T18:00:00Z");
+
+  it("still drops dated GitHub rows from before onboard", () => {
+    expect(isFreshForDiscord(new Date("2026-04-16T00:00:00Z"), onboardDay, "github")).toBe(false);
+  });
+
+  it("still drops GitHub rows with no date", () => {
+    expect(isFreshForDiscord(null, onboardDay, "github")).toBe(false);
+  });
+
+  it("posts Workday internships that have no date because they are still on the board", () => {
+    expect(isFreshForDiscord(null, onboardDay, "workday")).toBe(true);
+    expect(isFreshForDiscord(null, onboardDay, "ashby")).toBe(true);
+    expect(isFreshForDiscord(null, onboardDay, "lever")).toBe(true);
+    expect(isFreshForDiscord(null, onboardDay, "greenhouse")).toBe(true);
+  });
+
+  it("still drops dated ATS jobs from before onboard", () => {
+    expect(isFreshForDiscord(new Date("2026-04-16T00:00:00Z"), onboardDay, "workday")).toBe(false);
   });
 });
 

@@ -2,7 +2,7 @@ import { prisma } from "@/db/client";
 import { getAllAdapters } from "@/adapters";
 import { detectLevel, detectRoleFamily, detectRoleTitles, dedupHash, contentHash, isUsLocation, atsUrlNeedle } from "@/lib/normalize";
 import { filterEnabledRoleFamilies } from "@/config/roles.config";
-import { isPostedOnOrAfter, sortNewestFirst, startOfUtcDay } from "@/lib/freshness";
+import { isFreshForDiscord, sortNewestFirst, startOfUtcDay } from "@/lib/freshness";
 import { resolveAtsPublishedAt } from "@/lib/ats-published-at";
 
 export interface BackfillOptions {
@@ -78,7 +78,7 @@ export async function runBackfill(
         if (existingByContent) continue;
 
         const publishedAt = raw.publishedAt ? new Date(raw.publishedAt) : null;
-        const fresh = isPostedOnOrAfter(publishedAt, liveSince);
+        const fresh = isFreshForDiscord(publishedAt, liveSince, adapter.name);
 
         await prisma.posting.upsert({
           where: { dedupHash: hash },
@@ -104,7 +104,7 @@ export async function runBackfill(
 
         const existing = await prisma.posting.findUnique({ where: { dedupHash: hash } });
         if (existing && !existing.postedAt) {
-          if (!isPostedOnOrAfter(existing.publishedAt, liveSince)) {
+          if (!isFreshForDiscord(existing.publishedAt, liveSince, adapter.name)) {
             await prisma.posting.update({
               where: { dedupHash: hash },
               data: { postedAt: new Date() },

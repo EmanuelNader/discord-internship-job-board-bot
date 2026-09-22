@@ -14,6 +14,22 @@ export function isPostedOnOrAfter(publishedAt: Date | null, liveSince: Date): bo
   return publishedAt.getTime() >= startOfUtcDay(liveSince).getTime();
 }
 
+/**
+ * GitHub intern lists have dates — missing/old dates stay dropped.
+ * Workday/Greenhouse/Ashby/Lever often omit dates; if the row is still on the
+ * career board, treat it as currently open and post it.
+ */
+export function isFreshForDiscord(
+  publishedAt: Date | null,
+  liveSince: Date,
+  sourceName: string
+): boolean {
+  if (publishedAt && !Number.isNaN(publishedAt.getTime())) {
+    return publishedAt.getTime() >= startOfUtcDay(liveSince).getTime();
+  }
+  return sourceName !== "github";
+}
+
 export function publishedAtMs(publishedAt: Date | string | null | undefined): number | null {
   if (publishedAt == null || publishedAt === "") return null;
   const t = publishedAt instanceof Date ? publishedAt.getTime() : Date.parse(String(publishedAt));

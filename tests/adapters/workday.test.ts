@@ -62,6 +62,46 @@ describe("Workday Adapter", () => {
     expect(postings[1].externalId).toBe("JR456");
   });
 
+  it("keeps postedOn when Workday includes a date", async () => {
+    nock(`https://${nvidia.host}`).post(cxsPath(nvidia)).reply(200, {
+      jobPostings: [
+        {
+          title: "Hardware Engineering Intern",
+          locationsText: "Santa Clara, CA",
+          externalPath: "/job/Hardware-Engineering-Intern_JR123",
+          bulletFields: ["JR123"],
+          postedOn: "2026-09-18",
+        },
+      ],
+      total: 1,
+    });
+    nockWorkdayEmpty([`${nvidia.host}/${nvidia.site}`]);
+
+    const postings = await adapter.fetchNewPostings();
+    expect(postings).toHaveLength(1);
+    expect(postings[0].publishedAt).toMatch(/^2026-09-18/);
+  });
+
+  it("parses Posted N Days Ago from Workday CXS", async () => {
+    nock(`https://${nvidia.host}`).post(cxsPath(nvidia)).reply(200, {
+      jobPostings: [
+        {
+          title: "Hardware Engineering Intern",
+          locationsText: "Santa Clara, CA",
+          externalPath: "/job/Hardware-Engineering-Intern_JR123",
+          bulletFields: ["JR123"],
+          postedOn: "Posted 6 Days Ago",
+        },
+      ],
+      total: 1,
+    });
+    nockWorkdayEmpty([`${nvidia.host}/${nvidia.site}`]);
+
+    const postings = await adapter.fetchNewPostings();
+    expect(postings).toHaveLength(1);
+    expect(postings[0].publishedAt).toBeTruthy();
+  });
+
   it("isolates a single board failure", async () => {
     nock(`https://${nvidia.host}`).post(cxsPath(nvidia)).replyWithError("ECONNREFUSED");
     nockWorkdayEmpty([`${nvidia.host}/${nvidia.site}`]);

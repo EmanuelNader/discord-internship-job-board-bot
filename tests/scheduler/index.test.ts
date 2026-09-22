@@ -197,6 +197,57 @@ describe("SourcesManager", () => {
     );
   });
 
+  it("Discord-posts Workday internships that have no published date", async () => {
+    mockAdapter.name = "workday";
+    mockAdapter.fetchNewPostings = vi.fn().mockResolvedValue([
+      {
+        title: "Mechanical Engineering Intern (Summer 2027)",
+        company: "RTX",
+        url: "https://globalhr.wd5.myworkdayjobs.com/job/1",
+        externalId: "R123",
+        raw: {},
+      },
+    ]);
+    mockDetectLevel.mockReturnValue("internship");
+    mockDetectRoleFamily.mockReturnValue(["mechanical"]);
+    mockDetectRoleTitles.mockReturnValue(["eng-mechanical"]);
+    mockDedupHash.mockReturnValue("hash123");
+    mockContentHash.mockReturnValue("content-hash-123");
+    (prisma.posting.findUnique as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({
+        id: 1,
+        dedupHash: "hash123",
+        postedAt: null,
+        publishedAt: null,
+        firstSeenAt: new Date(),
+      });
+    (prisma.posting.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 1 });
+
+    const manager = new SourcesManager(
+      [mockAdapter],
+      onNewPosting,
+      onError,
+      new Date("2026-09-02T18:00:00Z")
+    );
+    await manager.runOnce("workday");
+
+    expect(prisma.posting.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ postedAt: null }),
+      })
+    );
+    expect(onNewPosting).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Mechanical Engineering Intern (Summer 2027)",
+        company: "RTX",
+        sourceName: "workday",
+        roleFamily: ["mechanical"],
+      }),
+      "hash123"
+    );
+  });
+
   it("uses the ATS listing date in Discord when GitHub only knows list age", async () => {
     mockAdapter.name = "github";
     mockAdapter.fetchNewPostings = vi.fn().mockResolvedValue([

@@ -1,12 +1,15 @@
 import type { SourceAdapter, RawPosting } from "@/lib/types";
 import { adapterConfigs } from "@/config/adapters.config";
 import { fetchJson, collectFromTargets } from "./base";
+import { workdayPostedAt } from "@/lib/workday-posted";
 
 interface WorkdayJob {
-  title: string;
+  title?: string;
   locationsText?: string;
   externalPath: string;
   bulletFields?: string[];
+  postedOn?: string;
+  postedDate?: string;
 }
 
 interface WorkdayResponse {
@@ -48,6 +51,7 @@ export function createWorkdayAdapter(): SourceAdapter {
             const jobs = data.jobPostings ?? [];
             total = data.total ?? jobs.length;
             for (const job of jobs) {
+              if (!job.title?.trim()) continue;
               const jobId = job.bulletFields?.[0] ?? job.externalPath;
               postings.push({
                 title: job.title,
@@ -55,6 +59,7 @@ export function createWorkdayAdapter(): SourceAdapter {
                 location: job.locationsText ?? null,
                 url: `https://${board.host}/${board.site}${job.externalPath}`,
                 externalId: jobId,
+                publishedAt: workdayPostedAt(job),
                 raw: job as unknown as Record<string, unknown>,
               });
             }
