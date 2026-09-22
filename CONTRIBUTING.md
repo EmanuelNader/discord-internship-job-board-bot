@@ -20,6 +20,7 @@ Edit `src/config/adapters.config.ts`. That file is the default board list, not a
 - **Ashby** — add the job-board slug from `https://jobs.ashbyhq.com/{slug}` to `ashby.companies`.
 - **Lever** — add the slug from `https://jobs.lever.co/{slug}` to `lever.companies`.
 - **Workday** — add a short name to `workday.companies` **and** a matching `workdayBoards` entry (`host`, `tenant`, `site` from the public career-site URL).
+- **iCIMS** — add a short name to `icims.companies` **and** a matching `icimsBoards` entry (`host` like `careers-kimley-horn.icims.com`). Prefer non-tech / traditional engineering boards; keep the allowlist small.
 - **GitHub intern lists** — add `owner/repo` or `owner/repo#path.md` to `github.companies`.
 
 Keep `enabled: true` only for adapters you actually poll. Run the existing adapter tests if you touch fetch/parse code:

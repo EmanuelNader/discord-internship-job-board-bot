@@ -6,6 +6,7 @@ import { createLeverAdapter } from "./lever";
 import { createWorkdayAdapter } from "./workday";
 import { createSimplifyAdapter } from "./simplify";
 import { createGithubAdapter } from "./github";
+import { createIcimsAdapter } from "./icims";
 import { createCustomAdapter } from "./custom";
 
 const adapterFactories: Record<SourceName, () => SourceAdapter> = {
@@ -13,6 +14,7 @@ const adapterFactories: Record<SourceName, () => SourceAdapter> = {
   ashby: createAshbyAdapter,
   lever: createLeverAdapter,
   workday: createWorkdayAdapter,
+  icims: createIcimsAdapter,
   simplify: createSimplifyAdapter,
   github: createGithubAdapter,
   custom: createCustomAdapter,

@@ -74,6 +74,7 @@ Only **US intern / co-op / fellowship** rows are posted. Defaults live in [`src/
 | Ashby | Company career boards | yes (51) |
 | Lever | Company career boards | yes (4) |
 | Workday | Company career boards | yes (15) |
+| iCIMS | Non-tech engineering career boards | yes (8) |
 | Simplify HTML | Job-board HTML scrape | no |
 | Custom ATS | Amazon, Microsoft, Meta, Apple, Google, Netflix, Oracle, LinkedIn, ByteDance | no (stub) |
 
@@ -157,3 +158,19 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) to add a company. Report vulnerabilities 
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+### iCIMS (non-tech engineering)
+
+Curated allowlist — intern/co-op search only, title-filtered:
+
+| Company | Host |
+| --- | --- |
+| Kimley-Horn | `careers-kimley-horn.icims.com` |
+| Dewberry | `careers-dewberry.icims.com` |
+| CEC | `careers-cecinc.icims.com` |
+| KCI | `careers-kci.icims.com` |
+| RS&H | `careers-rsandh.icims.com` |
+| GFT | `careers-gannettfleming.icims.com` |
+| Sargent & Lundy | `careers-sargentlundy.icims.com` |
+| GD Mission Systems | `careers-gdms.icims.com` |
+

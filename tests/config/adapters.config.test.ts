@@ -13,12 +13,19 @@ describe("adapterConfigs", () => {
     expect(config("simplify").companies).toHaveLength(0);
   });
 
-  it("enables Greenhouse, Ashby, Lever, Workday, and GitHub", () => {
+  it("enables Greenhouse, Ashby, Lever, Workday, iCIMS, and GitHub", () => {
     expect(config("greenhouse").enabled).toBe(true);
     expect(config("ashby").enabled).toBe(true);
     expect(config("lever").enabled).toBe(true);
     expect(config("workday").enabled).toBe(true);
+    expect(config("icims").enabled).toBe(true);
     expect(config("github").enabled).toBe(true);
+  });
+
+  it("stores iCIMS career hosts for the eight non-tech boards", () => {
+    const boards = config("icims").icimsBoards ?? [];
+    expect(boards).toHaveLength(8);
+    expect(boards.every((b) => b.host.endsWith(".icims.com"))).toBe(true);
   });
 
   it("points GitHub at Summer 2027 README tables including off-season", () => {

@@ -3,6 +3,7 @@ import type { SourceName } from "@/lib/types";
 /**
  * Default boards this bot polls. Not secrets — self-hosters should edit this file.
  * Greenhouse/Ashby/Lever: public job-board slugs. Workday: slug plus matching workdayBoards.
+ * iCIMS: company name plus careers-*.icims.com host (non-tech / traditional engineering).
  * GitHub: owner/repo or owner/repo#path.md intern-list READMEs.
  */
 
@@ -13,12 +14,18 @@ export interface WorkdayBoard {
   site: string;
 }
 
+export interface IcimsBoard {
+  name: string;
+  host: string;
+}
+
 export interface AdapterConfig {
   name: SourceName;
   enabled: boolean;
   pollIntervalSec: number;
   companies: string[]; // company slugs for ATS; owner/repo[#path] for GitHub
   workdayBoards?: WorkdayBoard[];
+  icimsBoards?: IcimsBoard[];
 }
 
 export const adapterConfigs: AdapterConfig[] = [
@@ -77,6 +84,18 @@ export const adapterConfigs: AdapterConfig[] = [
     { name: "Marathon Petroleum", host: "mpc.wd1.myworkdayjobs.com", tenant: "mpc", site: "MPCCareers" },
     { name: "Motiva", host: "motiva.wd1.myworkdayjobs.com", tenant: "motiva", site: "MotivaCareers" },
     { name: "Williams", host: "williams.wd5.myworkdayjobs.com", tenant: "williams", site: "External" },
+  ]},
+  { name: "icims", enabled: true, pollIntervalSec: 300, companies: [
+    "kimley-horn", "dewberry", "cec", "kci", "rsandh", "gft", "sargent-lundy", "gdms",
+  ], icimsBoards: [
+    { name: "Kimley-Horn", host: "careers-kimley-horn.icims.com" },
+    { name: "Dewberry", host: "careers-dewberry.icims.com" },
+    { name: "CEC", host: "careers-cecinc.icims.com" },
+    { name: "KCI", host: "careers-kci.icims.com" },
+    { name: "RS&H", host: "careers-rsandh.icims.com" },
+    { name: "GFT", host: "careers-gannettfleming.icims.com" },
+    { name: "Sargent & Lundy", host: "careers-sargentlundy.icims.com" },
+    { name: "GD Mission Systems", host: "careers-gdms.icims.com" },
   ]},
   { name: "simplify", enabled: false, pollIntervalSec: 900, companies: [] },
   { name: "github", enabled: true, pollIntervalSec: 900, companies: [
